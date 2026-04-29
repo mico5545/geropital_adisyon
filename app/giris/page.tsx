@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/kutuphane/supabase";
+import { supabaseAl } from "@/kutuphane/supabase";
 
 export default function GirisSayfasi() {
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function GirisSayfasi() {
     setHata("");
     setYukleniyor(true);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAl()
       .from("kullanicilar")
       .select("*")
       .eq("kullanici_adi", kullaniciAdi)

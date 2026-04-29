@@ -43,7 +43,7 @@ export default function MerkezPaneli() {
   const [yeniHizmetFiyat, setYeniHizmetFiyat] = useState("");
   const [yeniHizmetKategori, setYeniHizmetKategori] = useState("");
   const [yeniHizmetAciklama, setYeniHizmetAciklama] = useState("");
-
+  const supabase = supabaseAl();
   useEffect(() => {
     const kayitliKullanici = localStorage.getItem("kullanici");
     if (!kayitliKullanici) {
