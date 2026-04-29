@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/kutuphane/supabase";
+import { supabaseAl } from "@/kutuphane/supabase";
 
 type Kullanici = {
   id: string;

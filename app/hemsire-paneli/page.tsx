@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/kutuphane/supabase";
+import { supabaseAl } from "@/kutuphane/supabase";
 
 type Kullanici = {
   id: string;
@@ -60,13 +60,13 @@ export default function HemsirePaneli() {
 
     setYukleniyor(true);
 
-    const { data: hizmetData } = await supabase
+    const { data: hizmetData } = await supabaseAl()
       .from("geropital_hizmetleri")
       .select("*")
       .eq("aktif", true)
       .order("hizmet_adi");
 
-    const { data: adisyonData } = await supabase
+    const { data: adisyonData } = await supabaseAl()
       .from("adisyonlar")
       .select(`
         *,
@@ -115,7 +115,7 @@ export default function HemsirePaneli() {
       return;
     }
 
-    await supabase.from("hizmetler").insert({
+    await supabaseAl().from("hizmetler").insert({
       adisyon_id: seciliAdisyon.id,
       hizmet_adi: hizmet.hizmet_adi,
       hizmet_tipi: "Sahada Eklenen Hizmet",
@@ -125,7 +125,7 @@ export default function HemsirePaneli() {
       aciklama: hizmetAciklama,
     });
 
-    await supabase
+    await supabaseAl()
       .from("adisyonlar")
       .update({ durum: "Merkez Onayı Bekliyor" })
       .eq("id", seciliAdisyon.id);
@@ -149,7 +149,7 @@ export default function HemsirePaneli() {
     }
 
     if (odemeDurumu !== "Ödeme Alınmadı") {
-      await supabase.from("odemeler").insert({
+      await supabaseAl().from("odemeler").insert({
         adisyon_id: seciliAdisyon.id,
         tutar,
         odeme_yontemi: odemeDurumu,
@@ -158,7 +158,7 @@ export default function HemsirePaneli() {
       });
     }
 
-    await supabase
+    await supabaseAl()
       .from("adisyonlar")
       .update({
         odeme_durumu: odemeDurumu,
@@ -178,7 +178,7 @@ export default function HemsirePaneli() {
   async function sahaNotuKaydet() {
     if (!seciliAdisyon) return;
 
-    await supabase
+    await supabaseAl()
       .from("adisyonlar")
       .update({ saha_notu: sahaNotu })
       .eq("id", seciliAdisyon.id);
