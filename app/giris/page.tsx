@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseAl } from "@/kutuphane/supabase";
+import { supabase } from "@/kutuphane/supabase";
 
 export default function GirisSayfasi() {
   const router = useRouter();
-  const supabase = supabaseAl();
 
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
@@ -86,12 +85,8 @@ export default function GirisSayfasi() {
         </form>
 
         <div className="mt-6 bg-slate-50 rounded-xl p-4 text-sm text-slate-700">
-          <p>
-            <b>Merkez:</b> merkez / 1234
-          </p>
-          <p>
-            <b>Hemşire:</b> hemsire / 1234
-          </p>
+          <p><b>Merkez:</b> merkez / 1234</p>
+          <p><b>Hemşire:</b> hemsire / 1234</p>
         </div>
       </div>
     </main>

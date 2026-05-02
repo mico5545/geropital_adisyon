@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabaseAl } from "@/kutuphane/supabase";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/kutuphane/supabase";
 
 type Kullanici = {
   id: string;
@@ -36,26 +36,50 @@ type HastaKaydi = {
     telefon: string | null;
     adres: string | null;
     notlar: string | null;
-  };
-  hasta_hizmetleri: any[];
-  odemeler: any[];
+  }[];
+  hasta_hizmetleri: {
+    id: string;
+    hizmet_adi: string;
+    hizmet_tipi: string;
+    adet: number;
+    birim_fiyat: number;
+    aciklama: string | null;
+  }[];
+  odemeler: {
+    id: string;
+    odeme_durumu: string;
+    aciklama: string | null;
+    olusturma_tarihi: string;
+  }[];
+};
+
+type Bildirim = {
+  id: string;
+  hasta_kaydi_id: string;
+  baslik: string;
+  mesaj: string | null;
+  okundu: boolean;
+  olusturma_tarihi: string;
 };
 
 export default function MerkezPaneli() {
-  const supabase = supabaseAl();
-
   const [kullanici, setKullanici] = useState<Kullanici | null>(null);
   const [hastaKayitlari, setHastaKayitlari] = useState<HastaKaydi[]>([]);
   const [hizmetler, setHizmetler] = useState<Hizmet[]>([]);
-  const [bildirimler, setBildirimler] = useState<any[]>([]);
+  const [bildirimler, setBildirimler] = useState<Bildirim[]>([]);
+  const [hemsireler, setHemsireler] = useState<Kullanici[]>([]);
+  const [hemsireId, setHemsireId] = useState("");
+  const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [sonBildirimSayisi, setSonBildirimSayisi] = useState(0);
+  const oncekiBildirimSayisi = useRef(0);
+  const sesAktifRef = useRef(false);
+  const [sesAktif, setSesAktif] = useState(false);
 
   const [hastaAdi, setHastaAdi] = useState("");
   const [hastaTelefon, setHastaTelefon] = useState("");
   const [hastaAdresi, setHastaAdresi] = useState("");
   const [merkezNotu, setMerkezNotu] = useState("");
-
-  const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
 
   const [seciliHizmetId, setSeciliHizmetId] = useState("");
   const [hizmetAdet, setHizmetAdet] = useState("1");
@@ -66,6 +90,14 @@ export default function MerkezPaneli() {
   const [yeniHizmetFiyat, setYeniHizmetFiyat] = useState("");
   const [yeniHizmetKategori, setYeniHizmetKategori] = useState("");
   const [yeniHizmetAciklama, setYeniHizmetAciklama] = useState("");
+
+  const [toastMesaji, setToastMesaji] = useState("");
+
+  const [duzenlenenHizmet, setDuzenlenenHizmet] = useState<Hizmet | null>(null);
+  const [duzenleHizmetAdi, setDuzenleHizmetAdi] = useState("");
+  const [duzenleHizmetFiyat, setDuzenleHizmetFiyat] = useState("");
+  const [duzenleHizmetKategori, setDuzenleHizmetKategori] = useState("");
+  const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
     const kayitliKullanici = localStorage.getItem("kullanici");
@@ -83,7 +115,38 @@ export default function MerkezPaneli() {
     }
 
     setKullanici(aktifKullanici);
+
     verileriGetir();
+
+    const bildirimKontrol = setInterval(async () => {
+      const { data, error } = await supabase
+        .from("bildirimler")
+        .select("id")
+        .eq("okundu", false);
+
+      if (error) {
+        console.log("Bildirim kontrol hatası:", error);
+        return;
+      }
+
+      const yeniBildirimSayisi = data?.length || 0;
+
+      if (
+        sesAktifRef.current &&
+        oncekiBildirimSayisi.current > 0 &&
+        yeniBildirimSayisi > oncekiBildirimSayisi.current
+      ) {
+        bildirimSesiCal();
+        toastGoster("Yeni hemşire bildirimi geldi. Kontrol etmeniz gerekiyor.");
+        await verileriGetir();
+      }
+
+      oncekiBildirimSayisi.current = yeniBildirimSayisi;
+    }, 3000);
+
+    return () => {
+      clearInterval(bildirimKontrol);
+    };
   }, []);
 
   async function verileriGetir() {
@@ -92,26 +155,42 @@ export default function MerkezPaneli() {
     const { data: kayitData, error: kayitHata } = await supabase
       .from("hasta_kayitlari")
       .select(`
-        *,
-        hastalar (*),
-        hasta_hizmetleri (*),
-        odemeler (*)
+        id,
+        durum,
+        odeme_durumu,
+        merkez_notu,
+        hemsire_notu,
+        kapanis_notu,
+        olusturma_tarihi,
+        kapanis_tarihi,
+        hastalar (
+          id,
+          hasta_adi,
+          telefon,
+          adres,
+          notlar
+        ),
+        hasta_hizmetleri (
+          id,
+          hizmet_adi,
+          hizmet_tipi,
+          adet,
+          birim_fiyat,
+          aciklama
+        ),
+        odemeler (
+          id,
+          odeme_durumu,
+          aciklama,
+          olusturma_tarihi
+        )
       `)
-      .neq("durum", "Kapalı")
       .order("olusturma_tarihi", { ascending: false });
-
-    if (kayitHata) {
-      console.log("Hasta kayıtları çekilemedi:", kayitHata);
-    }
 
     const { data: hizmetData, error: hizmetHata } = await supabase
       .from("hizmet_katalogu")
       .select("*")
       .order("hizmet_adi", { ascending: true });
-
-    if (hizmetHata) {
-      console.log("Hizmetler çekilemedi:", hizmetHata);
-    }
 
     const { data: bildirimData, error: bildirimHata } = await supabase
       .from("bildirimler")
@@ -119,21 +198,120 @@ export default function MerkezPaneli() {
       .eq("okundu", false)
       .order("olusturma_tarihi", { ascending: false });
 
-    if (bildirimHata) {
-      console.log("Bildirimler çekilemedi:", bildirimHata);
+    const { data: hemsireData, error: hemsireHata } = await supabase
+      .from("kullanicilar")
+      .select("*")
+      .eq("rol", "hemsire")
+      .eq("aktif", true)
+      .order("ad_soyad");
+
+    if (kayitHata) console.log("Hasta kayıtları çekilemedi:", kayitHata);
+    if (hizmetHata) console.log("Hizmetler çekilemedi:", hizmetHata);
+    if (bildirimHata) console.log("Bildirimler çekilemedi:", bildirimHata);
+    if (hemsireHata) console.log("Hemşireler çekilemedi:", hemsireHata);
+
+    setHastaKayitlari((kayitData as HastaKaydi[]) || []);
+    setHizmetler((hizmetData as Hizmet[]) || []);
+    setBildirimler((bildirimData as Bildirim[]) || []);
+    setHemsireler((hemsireData as Kullanici[]) || []);
+    setYukleniyor(false);
+  }
+
+  function bildirimSesiniAktifEt() {
+    sesAktifRef.current = true;
+    setSesAktif(true);
+    bildirimSesiCal();
+  }
+
+  function toastGoster(mesaj: string) {
+    setToastMesaji(mesaj);
+
+    setTimeout(() => {
+      setToastMesaji("");
+    }, 5000);
+  }
+
+  function bildirimSesiCal() {
+    if (!sesAktifRef.current) return;
+
+    try {
+      const audioContext = new AudioContext();
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = "sine";
+
+      const t = audioContext.currentTime;
+
+      // 1. ding
+      oscillator.frequency.setValueAtTime(880, t);
+      gainNode.gain.setValueAtTime(0.2, t);
+
+      // 2. ding (yumuşak tekrar)
+      oscillator.frequency.setValueAtTime(660, t + 0.4);
+
+      // fade out
+      gainNode.gain.exponentialRampToValueAtTime(0.01, t + 1.2);
+
+      oscillator.start(t);
+      oscillator.stop(t + 1.2);
+    } catch (err) {
+      console.log("Ses hatası:", err);
+    }
+  }
+
+  function hizmetDuzenlemeAc(hizmet: Hizmet) {
+    setDuzenlenenHizmet(hizmet);
+    setDuzenleHizmetAdi(hizmet.hizmet_adi);
+    setDuzenleHizmetFiyat(String(hizmet.fiyat));
+    setDuzenleHizmetKategori(hizmet.kategori || "");
+    setDuzenleHizmetAciklama(hizmet.aciklama || "");
+  }
+
+  async function hizmetDuzenleKaydet() {
+    if (!duzenlenenHizmet) return;
+
+    if (!duzenleHizmetAdi.trim()) {
+      alert("Hizmet adı zorunludur.");
+      return;
     }
 
-    setHastaKayitlari(kayitData || []);
-    setHizmetler(hizmetData || []);
-    setBildirimler(bildirimData || []);
-    setYukleniyor(false);
+    const { error } = await supabase
+      .from("hizmet_katalogu")
+      .update({
+        hizmet_adi: duzenleHizmetAdi,
+        fiyat: Number(duzenleHizmetFiyat || 0),
+        kategori: duzenleHizmetKategori,
+        aciklama: duzenleHizmetAciklama,
+      })
+      .eq("id", duzenlenenHizmet.id);
+
+    if (error) {
+      console.log("Hizmet düzenleme hatası:", error);
+      alert("Hizmet düzenlenemedi.");
+      return;
+    }
+
+    setDuzenlenenHizmet(null);
+    await verileriGetir();
+    alert("Hizmet güncellendi.");
+  }
+
+  function toplamTutarHesapla(kayit: HastaKaydi) {
+    return (kayit.hasta_hizmetleri || []).reduce((toplam, hizmet) => {
+      return toplam + Number(hizmet.adet) * Number(hizmet.birim_fiyat);
+    }, 0);
   }
 
   async function hastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!kullanici) {
-      alert("Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.");
+      alert("Kullanıcı bulunamadı. Tekrar giriş yapın.");
       return;
     }
 
@@ -159,39 +337,35 @@ export default function MerkezPaneli() {
       return;
     }
 
-    const { error: kayitHata } = await supabase
+    const { data: kayit, error: kayitHata } = await supabase
       .from("hasta_kayitlari")
       .insert({
         hasta_id: hasta.id,
-        hemsire_id: null,
+        hemsire_id: hemsireId || null,
         acan_kullanici_id: kullanici.id,
         durum: "Aktif",
         odeme_durumu: "Tamamı Alınmadı",
         merkez_notu: merkezNotu,
         hemsire_notu: "",
         kapanis_notu: "",
-      });
+      })
+      .select()
+      .single();
 
-    if (kayitHata) {
+    if (kayitHata || !kayit) {
       console.log("Hasta kaydı oluşturma hatası:", kayitHata);
-      alert("Hasta kaydı oluşturulamadı. Konsolu kontrol edin.");
+      alert("Hasta kaydı oluşturulamadı.");
       return;
     }
-
-    alert("Hasta kaydı oluşturuldu.");
 
     setHastaAdi("");
     setHastaTelefon("");
     setHastaAdresi("");
+    setHemsireId("");
     setMerkezNotu("");
 
     await verileriGetir();
-  }
-
-  function toplamTutarHesapla(kayit: HastaKaydi) {
-    return (kayit.hasta_hizmetleri || []).reduce((toplam, hizmet) => {
-      return toplam + Number(hizmet.adet) * Number(hizmet.birim_fiyat);
-    }, 0);
+    alert("Hasta kaydı oluşturuldu.");
   }
 
   function hizmetSec(hizmetId: string) {
@@ -224,7 +398,7 @@ export default function MerkezPaneli() {
       hasta_kaydi_id: seciliKayit.id,
       hizmet_adi: hizmet.hizmet_adi,
       hizmet_tipi: "Merkez Hizmeti",
-      adet: Number(hizmetAdet),
+      adet: Number(hizmetAdet || 1),
       birim_fiyat: Number(hizmetFiyat),
       ekleyen_kullanici_id: kullanici.id,
       aciklama: hizmetAciklama,
@@ -262,7 +436,7 @@ export default function MerkezPaneli() {
     });
 
     if (error) {
-      console.log("Hizmet ekleme hatası:", error);
+      console.log("Hizmet katalog ekleme hatası:", error);
       alert("Hizmet eklenemedi.");
       return;
     }
@@ -277,14 +451,11 @@ export default function MerkezPaneli() {
 
   async function hizmetFiyatGuncelle(hizmet: Hizmet) {
     const yeniFiyat = prompt("Yeni fiyat giriniz:", String(hizmet.fiyat));
-
     if (!yeniFiyat) return;
 
     const { error } = await supabase
       .from("hizmet_katalogu")
-      .update({
-        fiyat: Number(yeniFiyat),
-      })
+      .update({ fiyat: Number(yeniFiyat) })
       .eq("id", hizmet.id);
 
     if (error) {
@@ -299,9 +470,7 @@ export default function MerkezPaneli() {
   async function hizmetAktifPasifYap(hizmet: Hizmet) {
     const { error } = await supabase
       .from("hizmet_katalogu")
-      .update({
-        aktif: !hizmet.aktif,
-      })
+      .update({ aktif: !hizmet.aktif })
       .eq("id", hizmet.id);
 
     if (error) {
@@ -316,9 +485,7 @@ export default function MerkezPaneli() {
   async function merkezOnayiVer(kayitId: string) {
     const { error } = await supabase
       .from("hasta_kayitlari")
-      .update({
-        durum: "Aktif",
-      })
+      .update({ durum: "Aktif" })
       .eq("id", kayitId);
 
     if (error) {
@@ -329,9 +496,7 @@ export default function MerkezPaneli() {
 
     await supabase
       .from("bildirimler")
-      .update({
-        okundu: true,
-      })
+      .update({ okundu: true })
       .eq("hasta_kaydi_id", kayitId);
 
     await verileriGetir();
@@ -340,7 +505,6 @@ export default function MerkezPaneli() {
 
   async function hastaKaydiKapat(kayitId: string) {
     const kapanisNotu = prompt("Kapanış notu giriniz:");
-
     const { error } = await supabase
       .from("hasta_kayitlari")
       .update({
@@ -361,8 +525,17 @@ export default function MerkezPaneli() {
     alert("Hasta kaydı kapatıldı.");
   }
 
+  function cikisYap() {
+    localStorage.removeItem("kullanici");
+    window.location.href = "/giris";
+  }
+
   if (yukleniyor) {
-    return <main className="p-10">Yükleniyor...</main>;
+    return (
+      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <p className="text-slate-700 font-black">Yükleniyor...</p>
+      </main>
+    );
   }
 
   return (
@@ -378,7 +551,21 @@ export default function MerkezPaneli() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={bildirimSesiniAktifEt}
+              className="bg-emerald-100 text-emerald-900 px-4 py-2 rounded-xl font-bold"
+            >
+              {sesAktif ? "Bildirim Sesi Aktif" : "Bildirim Sesini Aktif Et"}
+            </button>
+
+            <a
+              href="/bildirimler"
+              className="bg-amber-100 text-amber-900 px-4 py-2 rounded-xl font-bold"
+            >
+              Bildirimler ({bildirimler.length})
+            </a>
+
             <a
               href="/kapatilan-hasta-kayitlari"
               className="bg-slate-100 text-slate-900 px-4 py-2 rounded-xl font-bold"
@@ -386,12 +573,12 @@ export default function MerkezPaneli() {
               Kapatılan Kayıtlar
             </a>
 
-            <a
-              href="/giris"
+            <button
+              onClick={cikisYap}
               className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
             >
               Çıkış
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -410,7 +597,9 @@ export default function MerkezPaneli() {
                   className="bg-white rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
                 >
                   <div>
-                    <p className="font-black text-slate-900">{bildirim.baslik}</p>
+                    <p className="font-black text-slate-900">
+                      {bildirim.baslik}
+                    </p>
                     <p className="text-sm text-slate-600">{bildirim.mesaj}</p>
                   </div>
 
@@ -454,6 +643,19 @@ export default function MerkezPaneli() {
                 placeholder="Adres"
               />
 
+              <select
+                value={hemsireId}
+                onChange={(e) => setHemsireId(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              >
+                <option value="">Hemşire seçiniz</option>
+                {hemsireler.map((hemsire) => (
+                  <option key={hemsire.id} value={hemsire.id}>
+                    {hemsire.ad_soyad}
+                  </option>
+                ))}
+              </select>
+
               <textarea
                 value={merkezNotu}
                 onChange={(e) => setMerkezNotu(e.target.value)}
@@ -481,11 +683,14 @@ export default function MerkezPaneli() {
                 const toplam = toplamTutarHesapla(kayit);
 
                 return (
-                  <div key={kayit.id} className="border border-slate-200 rounded-2xl p-5">
+                  <div
+                    key={kayit.id}
+                    className="border border-slate-200 rounded-2xl p-5"
+                  >
                     <div className="flex flex-col md:flex-row md:justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-black text-slate-900">
-                          {kayit.hastalar?.hasta_adi}
+                          {kayit.hastalar?.hasta_adi || "Hasta adı yok"}
                         </h3>
                         <p className="text-sm text-slate-600">
                           {kayit.hastalar?.telefon || "Telefon yok"}
@@ -497,7 +702,9 @@ export default function MerkezPaneli() {
 
                       <div className="text-right">
                         <p className="font-black text-slate-900">{kayit.durum}</p>
-                        <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
+                        <p className="text-sm text-slate-600">
+                          {kayit.odeme_durumu}
+                        </p>
                       </div>
                     </div>
 
@@ -578,14 +785,21 @@ export default function MerkezPaneli() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {hizmetler.map((hizmet) => (
-                <div key={hizmet.id} className="border border-slate-200 rounded-2xl p-4">
+                <div
+                  key={hizmet.id}
+                  className="border border-slate-200 rounded-2xl p-4"
+                >
                   <div className="flex justify-between gap-3">
                     <div>
                       <h3 className="font-black text-slate-900">
                         {hizmet.hizmet_adi}
                       </h3>
-                      <p className="text-sm text-slate-500">{hizmet.kategori}</p>
-                      <p className="text-sm text-slate-500">{hizmet.aciklama}</p>
+                      <p className="text-sm text-slate-500">
+                        {hizmet.kategori}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {hizmet.aciklama}
+                      </p>
                     </div>
 
                     <p className="font-black text-slate-900">
@@ -595,10 +809,10 @@ export default function MerkezPaneli() {
 
                   <div className="flex gap-2 mt-3">
                     <button
-                      onClick={() => hizmetFiyatGuncelle(hizmet)}
+                      onClick={() => hizmetDuzenlemeAc(hizmet)}
                       className="bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-bold"
                     >
-                      Fiyat Düzenle
+                      Düzenle
                     </button>
 
                     <button
@@ -625,7 +839,7 @@ export default function MerkezPaneli() {
             <div className="flex justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">
-                  {seciliKayit.hastalar?.hasta_adi}
+                  {seciliKayit.hastalar?.hasta_adi || "Hasta adı yok"}
                 </h2>
                 <p className="text-sm text-slate-600">
                   {seciliKayit.hastalar?.telefon}
@@ -666,22 +880,24 @@ export default function MerkezPaneli() {
                 <p className="text-slate-500">Henüz hizmet eklenmedi.</p>
               )}
 
-              {(seciliKayit.hasta_hizmetleri || []).map((hizmet: any) => (
+              {(seciliKayit.hasta_hizmetleri || []).map((hizmet) => (
                 <div
                   key={hizmet.id}
                   className="border border-slate-200 rounded-xl p-3 flex justify-between gap-3"
                 >
                   <div>
-                    <p className="font-black text-slate-900">{hizmet.hizmet_adi}</p>
+                    <p className="font-black text-slate-900">
+                      {hizmet.hizmet_adi}
+                    </p>
                     <p className="text-sm text-slate-500">
                       {hizmet.hizmet_tipi} • {hizmet.aciklama}
                     </p>
                   </div>
 
                   <p className="font-black text-slate-900">
-                    {(Number(hizmet.adet) * Number(hizmet.birim_fiyat)).toLocaleString(
-                      "tr-TR"
-                    )}{" "}
+                    {(
+                      Number(hizmet.adet) * Number(hizmet.birim_fiyat)
+                    ).toLocaleString("tr-TR")}{" "}
                     TL
                   </p>
                 </div>
@@ -689,7 +905,9 @@ export default function MerkezPaneli() {
             </section>
 
             <section className="bg-slate-50 rounded-2xl p-4 mb-5">
-              <h3 className="font-black text-slate-900 mb-3">Merkez Hizmeti Ekle</h3>
+              <h3 className="font-black text-slate-900 mb-3">
+                Merkez Hizmeti Ekle
+              </h3>
 
               <div className="grid md:grid-cols-4 gap-3">
                 <select
@@ -753,6 +971,87 @@ export default function MerkezPaneli() {
                 Hasta Kaydını Kapat
               </button>
             </section>
+          </div>
+        </div>
+      )}
+
+      {toastMesaji && (
+        <div className="fixed right-5 top-5 z-[9999] w-[calc(100%-40px)] max-w-md rounded-2xl bg-slate-950 text-white shadow-2xl border border-slate-700 p-5 animate-pulse">
+          <div className="flex items-start gap-3">
+            <div className="w-3 h-3 rounded-full bg-red-500 mt-2"></div>
+
+            <div>
+              <p className="font-black text-lg">Yeni Bildirim</p>
+              <p className="text-sm text-slate-200 mt-1">{toastMesaji}</p>
+
+              <a
+                href="/bildirimler"
+                className="inline-block mt-3 bg-white text-slate-950 px-4 py-2 rounded-xl font-black text-sm"
+              >
+                Bildirimlere Git
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {duzenlenenHizmet && (
+        <div className="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">
+                  Hizmet Düzenle
+                </h2>
+                <p className="text-sm text-slate-600">
+                  Hizmet adı, fiyatı, kategorisi ve açıklaması merkez tarafından düzenlenir.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setDuzenlenenHizmet(null)}
+                className="bg-slate-100 text-slate-900 px-4 py-2 rounded-xl font-black"
+              >
+                Kapat
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                value={duzenleHizmetAdi}
+                onChange={(e) => setDuzenleHizmetAdi(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Hizmet adı"
+              />
+
+              <input
+                value={duzenleHizmetFiyat}
+                onChange={(e) => setDuzenleHizmetFiyat(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Fiyat"
+              />
+
+              <input
+                value={duzenleHizmetKategori}
+                onChange={(e) => setDuzenleHizmetKategori(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Kategori"
+              />
+
+              <textarea
+                value={duzenleHizmetAciklama}
+                onChange={(e) => setDuzenleHizmetAciklama(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-28"
+                placeholder="Açıklama"
+              />
+
+              <button
+                onClick={hizmetDuzenleKaydet}
+                className="w-full bg-blue-600 text-white rounded-xl py-3 font-black"
+              >
+                Değişiklikleri Kaydet
+              </button>
+            </div>
           </div>
         </div>
       )}

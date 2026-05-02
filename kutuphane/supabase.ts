@@ -8,6 +8,7 @@ const supabaseAnonAnahtari =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "sb_publishable_7iNM53rPPMlbZM_GxbBIxw_dJP6RQqw";
 
-export function supabaseAl() {
-  return createClient(supabaseAdresi, supabaseAnonAnahtari);
-}
+export const supabase = createClient(
+  supabaseAdresi,
+  supabaseAnonAnahtari
+);
