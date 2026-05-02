@@ -6,135 +6,159 @@ import { supabaseAl } from "@/kutuphane/supabase";
 type Kullanici = {
   id: string;
   kullanici_adi: string;
+  sifre: string;
   ad_soyad: string;
   rol: "merkez" | "hemsire";
+  aktif: boolean;
 };
 
-type HizmetKatalogu = {
+type Hizmet = {
   id: string;
   hizmet_adi: string;
-  varsayilan_fiyat: number;
+  fiyat: number;
   kategori: string | null;
   aciklama: string | null;
   aktif: boolean;
 };
 
+type HastaKaydi = {
+  id: string;
+  durum: string;
+  odeme_durumu: string;
+  merkez_notu: string | null;
+  hemsire_notu: string | null;
+  kapanis_notu: string | null;
+  olusturma_tarihi: string;
+  kapanis_tarihi: string | null;
+  hastalar: {
+    id: string;
+    hasta_adi: string;
+    telefon: string | null;
+    adres: string | null;
+    notlar: string | null;
+  };
+  hasta_hizmetleri: any[];
+  odemeler: any[];
+};
+
 export default function MerkezPaneli() {
+  const supabase = supabaseAl();
+
   const [kullanici, setKullanici] = useState<Kullanici | null>(null);
-  const [hemsireler, setHemsireler] = useState<Kullanici[]>([]);
-  const [adisyonlar, setAdisyonlar] = useState<any[]>([]);
-  const [hizmetler, setHizmetler] = useState<HizmetKatalogu[]>([]);
+  const [hastaKayitlari, setHastaKayitlari] = useState<HastaKaydi[]>([]);
+  const [hizmetler, setHizmetler] = useState<Hizmet[]>([]);
+  const [bildirimler, setBildirimler] = useState<any[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
 
   const [hastaAdi, setHastaAdi] = useState("");
   const [hastaTelefon, setHastaTelefon] = useState("");
   const [hastaAdresi, setHastaAdresi] = useState("");
-  const [hemsireId, setHemsireId] = useState("");
   const [merkezNotu, setMerkezNotu] = useState("");
 
-  const [seciliAdisyon, setSeciliAdisyon] = useState<any | null>(null);
+  const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
 
   const [seciliHizmetId, setSeciliHizmetId] = useState("");
-  const [adet, setAdet] = useState("1");
-  const [fiyat, setFiyat] = useState("");
+  const [hizmetAdet, setHizmetAdet] = useState("1");
+  const [hizmetFiyat, setHizmetFiyat] = useState("");
   const [hizmetAciklama, setHizmetAciklama] = useState("");
 
   const [yeniHizmetAdi, setYeniHizmetAdi] = useState("");
   const [yeniHizmetFiyat, setYeniHizmetFiyat] = useState("");
   const [yeniHizmetKategori, setYeniHizmetKategori] = useState("");
   const [yeniHizmetAciklama, setYeniHizmetAciklama] = useState("");
-  const supabase = supabaseAl();
+
   useEffect(() => {
     const kayitliKullanici = localStorage.getItem("kullanici");
+
     if (!kayitliKullanici) {
       window.location.href = "/giris";
       return;
     }
 
     const aktifKullanici = JSON.parse(kayitliKullanici);
-    setKullanici(aktifKullanici);
 
     if (aktifKullanici.rol !== "merkez") {
       window.location.href = "/hemsire-paneli";
       return;
     }
 
+    setKullanici(aktifKullanici);
     verileriGetir();
   }, []);
 
   async function verileriGetir() {
     setYukleniyor(true);
 
-    const { data: hemsireData } = await supabase
-      .from("kullanicilar")
-      .select("*")
-      .eq("rol", "hemsire")
-      .eq("aktif", true)
-      .order("ad_soyad");
-
-    const { data: hizmetData } = await supabase
-      .from("geropital_hizmetleri")
-      .select("*")
-      .order("hizmet_adi");
-
-    const { data: adisyonData } = await supabase
+    const { data: kayitData, error: kayitHata } = await supabase
       .from("hasta_kayitlari")
       .select(`
         *,
         hastalar (*),
-        hemsire:kullanicilar!hasta_kayitlari_hemsire_id_fkey (*),
-        hizmetler (*),
+        hasta_hizmetleri (*),
         odemeler (*)
       `)
+      .neq("durum", "Kapalı")
       .order("olusturma_tarihi", { ascending: false });
 
-    setHemsireler(hemsireData || []);
+    if (kayitHata) {
+      console.log("Hasta kayıtları çekilemedi:", kayitHata);
+    }
+
+    const { data: hizmetData, error: hizmetHata } = await supabase
+      .from("hizmet_katalogu")
+      .select("*")
+      .order("hizmet_adi", { ascending: true });
+
+    if (hizmetHata) {
+      console.log("Hizmetler çekilemedi:", hizmetHata);
+    }
+
+    const { data: bildirimData, error: bildirimHata } = await supabase
+      .from("bildirimler")
+      .select("*")
+      .eq("okundu", false)
+      .order("olusturma_tarihi", { ascending: false });
+
+    if (bildirimHata) {
+      console.log("Bildirimler çekilemedi:", bildirimHata);
+    }
+
+    setHastaKayitlari(kayitData || []);
     setHizmetler(hizmetData || []);
-    setAdisyonlar(adisyonData || []);
+    setBildirimler(bildirimData || []);
     setYukleniyor(false);
-  }
-
-  function toplamHesapla(adisyon: any) {
-    return (adisyon.hizmetler || []).reduce(
-      (toplam: number, h: any) => toplam + Number(h.adet) * Number(h.birim_fiyat),
-      0
-    );
-  }
-
-  function odemeHesapla(adisyon: any) {
-    return (adisyon.odemeler || []).reduce(
-      (toplam: number, o: any) => toplam + Number(o.tutar),
-      0
-    );
   }
 
   async function hastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!kullanici) return;
-
-    if (!hastaAdi) {
-      alert("Hasta adı zorunlu");
+    if (!kullanici) {
+      alert("Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.");
       return;
     }
 
-    // 1. Hasta oluştur
+    if (!hastaAdi.trim()) {
+      alert("Hasta adı zorunludur.");
+      return;
+    }
+
     const { data: hasta, error: hastaHata } = await supabase
       .from("hastalar")
       .insert({
         hasta_adi: hastaAdi,
         telefon: hastaTelefon,
         adres: hastaAdresi,
+        notlar: "",
       })
       .select()
       .single();
 
     if (hastaHata || !hasta) {
-      alert("Hasta oluşturulamadı");
+      console.log("Hasta oluşturma hatası:", hastaHata);
+      alert("Hasta oluşturulamadı.");
       return;
     }
 
-    // 2. Hasta kaydı oluştur
     const { error: kayitHata } = await supabase
       .from("hasta_kayitlari")
       .insert({
@@ -144,15 +168,17 @@ export default function MerkezPaneli() {
         durum: "Aktif",
         odeme_durumu: "Tamamı Alınmadı",
         merkez_notu: merkezNotu,
+        hemsire_notu: "",
+        kapanis_notu: "",
       });
 
     if (kayitHata) {
-      console.log(kayitHata);
-      alert("Hasta kaydı oluşturulamadı");
+      console.log("Hasta kaydı oluşturma hatası:", kayitHata);
+      alert("Hasta kaydı oluşturulamadı. Konsolu kontrol edin.");
       return;
     }
 
-    alert("Hasta kaydı açıldı");
+    alert("Hasta kaydı oluşturuldu.");
 
     setHastaAdi("");
     setHastaTelefon("");
@@ -162,17 +188,25 @@ export default function MerkezPaneli() {
     await verileriGetir();
   }
 
+  function toplamTutarHesapla(kayit: HastaKaydi) {
+    return (kayit.hasta_hizmetleri || []).reduce((toplam, hizmet) => {
+      return toplam + Number(hizmet.adet) * Number(hizmet.birim_fiyat);
+    }, 0);
+  }
+
   function hizmetSec(hizmetId: string) {
     setSeciliHizmetId(hizmetId);
+
     const hizmet = hizmetler.find((h) => h.id === hizmetId);
+
     if (hizmet) {
-      setFiyat(String(hizmet.varsayilan_fiyat));
+      setHizmetFiyat(String(hizmet.fiyat));
       setHizmetAciklama(hizmet.aciklama || "");
     }
   }
 
-  async function adisyonaHizmetEkle() {
-    if (!kullanici || !seciliAdisyon) return;
+  async function hizmetEkle() {
+    if (!kullanici || !seciliKayit) return;
 
     const hizmet = hizmetler.find((h) => h.id === seciliHizmetId);
 
@@ -181,57 +215,57 @@ export default function MerkezPaneli() {
       return;
     }
 
-    await supabase.from("hizmetler").insert({
-      adisyon_id: seciliAdisyon.id,
+    if (!hizmetFiyat || Number(hizmetFiyat) < 0) {
+      alert("Geçerli fiyat giriniz.");
+      return;
+    }
+
+    const { error } = await supabase.from("hasta_hizmetleri").insert({
+      hasta_kaydi_id: seciliKayit.id,
       hizmet_adi: hizmet.hizmet_adi,
       hizmet_tipi: "Merkez Hizmeti",
-      adet: Number(adet),
-      birim_fiyat: Number(fiyat),
+      adet: Number(hizmetAdet),
+      birim_fiyat: Number(hizmetFiyat),
       ekleyen_kullanici_id: kullanici.id,
       aciklama: hizmetAciklama,
     });
 
+    if (error) {
+      console.log("Hizmet ekleme hatası:", error);
+      alert("Hizmet eklenemedi.");
+      return;
+    }
+
     setSeciliHizmetId("");
-    setAdet("1");
-    setFiyat("");
+    setHizmetAdet("1");
+    setHizmetFiyat("");
     setHizmetAciklama("");
 
     await verileriGetir();
-  }
-
-  async function odemeDurumuGuncelle(adisyonId: string, durum: string) {
-    await supabase
-      .from("adisyonlar")
-      .update({ odeme_durumu: durum })
-      .eq("id", adisyonId);
-
-    await verileriGetir();
-  }
-
-  async function adisyonDurumuGuncelle(adisyonId: string, durum: string) {
-    await supabase
-      .from("adisyonlar")
-      .update({ durum })
-      .eq("id", adisyonId);
-
-    await verileriGetir();
+    alert("Hizmet eklendi.");
   }
 
   async function hizmetKatalogunaEkle(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!yeniHizmetAdi || !yeniHizmetFiyat) {
-      alert("Hizmet adı ve fiyat zorunludur.");
+    if (!yeniHizmetAdi.trim()) {
+      alert("Hizmet adı zorunludur.");
       return;
     }
 
-    await supabase.from("geropital_hizmetleri").insert({
+    const { error } = await supabase.from("hizmet_katalogu").insert({
       hizmet_adi: yeniHizmetAdi,
-      varsayilan_fiyat: Number(yeniHizmetFiyat),
+      fiyat: Number(yeniHizmetFiyat || 0),
       kategori: yeniHizmetKategori,
       aciklama: yeniHizmetAciklama,
       aktif: true,
     });
+
+    if (error) {
+      console.log("Hizmet ekleme hatası:", error);
+      alert("Hizmet eklenemedi.");
+      return;
+    }
 
     setYeniHizmetAdi("");
     setYeniHizmetFiyat("");
@@ -241,25 +275,90 @@ export default function MerkezPaneli() {
     await verileriGetir();
   }
 
-  async function hizmetAktifPasifYap(hizmet: HizmetKatalogu) {
-    await supabase
-      .from("geropital_hizmetleri")
-      .update({ aktif: !hizmet.aktif })
+  async function hizmetFiyatGuncelle(hizmet: Hizmet) {
+    const yeniFiyat = prompt("Yeni fiyat giriniz:", String(hizmet.fiyat));
+
+    if (!yeniFiyat) return;
+
+    const { error } = await supabase
+      .from("hizmet_katalogu")
+      .update({
+        fiyat: Number(yeniFiyat),
+      })
       .eq("id", hizmet.id);
+
+    if (error) {
+      console.log("Fiyat güncelleme hatası:", error);
+      alert("Fiyat güncellenemedi.");
+      return;
+    }
 
     await verileriGetir();
   }
 
-  async function hizmetFiyatGuncelle(hizmet: HizmetKatalogu) {
-    const yeniFiyat = prompt("Yeni fiyat:", String(hizmet.varsayilan_fiyat));
-    if (!yeniFiyat) return;
-
-    await supabase
-      .from("geropital_hizmetleri")
-      .update({ varsayilan_fiyat: Number(yeniFiyat) })
+  async function hizmetAktifPasifYap(hizmet: Hizmet) {
+    const { error } = await supabase
+      .from("hizmet_katalogu")
+      .update({
+        aktif: !hizmet.aktif,
+      })
       .eq("id", hizmet.id);
 
+    if (error) {
+      console.log("Aktif/pasif hatası:", error);
+      alert("İşlem yapılamadı.");
+      return;
+    }
+
     await verileriGetir();
+  }
+
+  async function merkezOnayiVer(kayitId: string) {
+    const { error } = await supabase
+      .from("hasta_kayitlari")
+      .update({
+        durum: "Aktif",
+      })
+      .eq("id", kayitId);
+
+    if (error) {
+      console.log("Onay hatası:", error);
+      alert("Onay verilemedi.");
+      return;
+    }
+
+    await supabase
+      .from("bildirimler")
+      .update({
+        okundu: true,
+      })
+      .eq("hasta_kaydi_id", kayitId);
+
+    await verileriGetir();
+    alert("Merkez onayı verildi.");
+  }
+
+  async function hastaKaydiKapat(kayitId: string) {
+    const kapanisNotu = prompt("Kapanış notu giriniz:");
+
+    const { error } = await supabase
+      .from("hasta_kayitlari")
+      .update({
+        durum: "Kapalı",
+        kapanis_notu: kapanisNotu || "",
+        kapanis_tarihi: new Date().toISOString(),
+      })
+      .eq("id", kayitId);
+
+    if (error) {
+      console.log("Kapatma hatası:", error);
+      alert("Hasta kaydı kapatılamadı.");
+      return;
+    }
+
+    setSeciliKayit(null);
+    await verileriGetir();
+    alert("Hasta kaydı kapatıldı.");
   }
 
   if (yukleniyor) {
@@ -269,252 +368,357 @@ export default function MerkezPaneli() {
   return (
     <main className="min-h-screen bg-slate-100">
       <header className="bg-white border-b border-slate-200 p-5">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black text-slate-900">Merkez Paneli</h1>
-            <p className="text-sm text-slate-600">Adisyon, hizmet ve ödeme yönetimi</p>
+            <h1 className="text-2xl font-black text-slate-900">
+              Geropital İş Talimatı
+            </h1>
+            <p className="text-sm text-slate-600">
+              Merkez hasta kaydı, hizmet yönetimi ve onay ekranı
+            </p>
           </div>
 
-          <a href="/giris" className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold">
-            Çıkış
-          </a>
+          <div className="flex gap-2">
+            <a
+              href="/kapatilan-hasta-kayitlari"
+              className="bg-slate-100 text-slate-900 px-4 py-2 rounded-xl font-bold"
+            >
+              Kapatılan Kayıtlar
+            </a>
+
+            <a
+              href="/giris"
+              className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
+            >
+              Çıkış
+            </a>
+          </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-5 grid lg:grid-cols-3 gap-6">
-        <section className="bg-white rounded-3xl shadow p-6 h-fit">
-          <h2 className="text-xl font-black mb-4">Yeni Adisyon Aç</h2>
+      <div className="max-w-7xl mx-auto p-5">
+        {bildirimler.length > 0 && (
+          <section className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-6">
+            <h2 className="text-xl font-black text-amber-900 mb-3">
+              Merkez Onayı Bekleyen Bildirimler
+            </h2>
 
-          <form onSubmit={hastaKaydiAc} className="space-y-3">
-            <input
-              value={hastaAdi}
-              onChange={(e) => setHastaAdi(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Hasta adı soyadı"
-            />
-
-            <input
-              value={hastaTelefon}
-              onChange={(e) => setHastaTelefon(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Telefon"
-            />
-
-            <textarea
-              value={hastaAdresi}
-              onChange={(e) => setHastaAdresi(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Adres"
-            />
-
-            <select
-              value={hemsireId}
-              onChange={(e) => setHemsireId(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-            >
-              <option value="">Hemşire seçiniz</option>
-              {hemsireler.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.ad_soyad}
-                </option>
-              ))}
-            </select>
-
-            <textarea
-              value={merkezNotu}
-              onChange={(e) => setMerkezNotu(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Merkez notu"
-            />
-
-            <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-black">
-              Adisyon Aç
-            </button>
-          </form>
-        </section>
-
-        <section className="lg:col-span-2 bg-white rounded-3xl shadow p-6">
-          <h2 className="text-xl font-black mb-4">Hasta Adisyonları</h2>
-
-          <div className="space-y-4">
-            {adisyonlar.map((a) => {
-              const toplam = toplamHesapla(a);
-              const odeme = odemeHesapla(a);
-
-              return (
-                <div key={a.id} className="border rounded-2xl p-5">
-                  <div className="flex justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-black">{a.hastalar?.hasta_adi}</h3>
-                      <p className="text-sm text-slate-600">{a.hastalar?.telefon}</p>
-                      <p className="text-sm text-slate-600">{a.hastalar?.adres}</p>
-                      <p className="text-sm font-bold mt-1">
-                        Hemşire: {a.hemsire?.ad_soyad || "Atanmadı"}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="font-black">{a.durum}</p>
-                      <p className="text-sm text-slate-600">{a.odeme_durumu}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mt-4">
-                    <div className="bg-slate-50 p-3 rounded-xl">
-                      <p className="text-xs">Toplam</p>
-                      <p className="font-black">{toplam.toLocaleString("tr-TR")} TL</p>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-xl">
-                      <p className="text-xs">Alınan</p>
-                      <p className="font-black text-emerald-600">{odeme.toLocaleString("tr-TR")} TL</p>
-                    </div>
-                    <div className="bg-slate-50 p-3 rounded-xl">
-                      <p className="text-xs">Kalan</p>
-                      <p className="font-black text-red-600">{(toplam - odeme).toLocaleString("tr-TR")} TL</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setSeciliAdisyon(a)}
-                    className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-black"
-                  >
-                    Detay / Hizmet / Ödeme
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="lg:col-span-3 bg-white rounded-3xl shadow p-6">
-          <h2 className="text-xl font-black mb-4">Geropital Hizmet Yönetimi</h2>
-
-          <form onSubmit={hizmetKatalogunaEkle} className="grid md:grid-cols-5 gap-3 mb-5">
-            <input
-              value={yeniHizmetAdi}
-              onChange={(e) => setYeniHizmetAdi(e.target.value)}
-              className="border rounded-xl px-4 py-3"
-              placeholder="Hizmet adı"
-            />
-
-            <input
-              value={yeniHizmetFiyat}
-              onChange={(e) => setYeniHizmetFiyat(e.target.value)}
-              className="border rounded-xl px-4 py-3"
-              placeholder="Fiyat"
-            />
-
-            <input
-              value={yeniHizmetKategori}
-              onChange={(e) => setYeniHizmetKategori(e.target.value)}
-              className="border rounded-xl px-4 py-3"
-              placeholder="Kategori"
-            />
-
-            <input
-              value={yeniHizmetAciklama}
-              onChange={(e) => setYeniHizmetAciklama(e.target.value)}
-              className="border rounded-xl px-4 py-3"
-              placeholder="Açıklama"
-            />
-
-            <button className="bg-blue-600 text-white rounded-xl font-black">
-              Hizmet Ekle
-            </button>
-          </form>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {hizmetler.map((h) => (
-              <div key={h.id} className="border rounded-2xl p-4">
-                <div className="flex justify-between gap-3">
+            <div className="space-y-3">
+              {bildirimler.map((bildirim) => (
+                <div
+                  key={bildirim.id}
+                  className="bg-white rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                >
                   <div>
-                    <h3 className="font-black">{h.hizmet_adi}</h3>
-                    <p className="text-sm text-slate-500">{h.kategori}</p>
-                    <p className="text-sm text-slate-500">{h.aciklama}</p>
+                    <p className="font-black text-slate-900">{bildirim.baslik}</p>
+                    <p className="text-sm text-slate-600">{bildirim.mesaj}</p>
                   </div>
 
-                  <p className="font-black">{Number(h.varsayilan_fiyat).toLocaleString("tr-TR")} TL</p>
-                </div>
-
-                <div className="flex gap-2 mt-3">
                   <button
-                    onClick={() => hizmetFiyatGuncelle(h)}
-                    className="bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-bold"
+                    onClick={() => merkezOnayiVer(bildirim.hasta_kaydi_id)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold"
                   >
-                    Fiyat
-                  </button>
-
-                  <button
-                    onClick={() => hizmetAktifPasifYap(h)}
-                    className={`px-3 py-2 rounded-xl text-sm font-bold ${
-                      h.aktif ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
-                    {h.aktif ? "Pasif Yap" : "Aktif Yap"}
+                    Onayla
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <section className="bg-white rounded-3xl shadow p-6 h-fit">
+            <h2 className="text-xl font-black text-slate-900 mb-4">
+              Yeni Hasta Kaydı Aç
+            </h2>
+
+            <form onSubmit={hastaKaydiAc} className="space-y-3">
+              <input
+                value={hastaAdi}
+                onChange={(e) => setHastaAdi(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Hasta adı soyadı"
+              />
+
+              <input
+                value={hastaTelefon}
+                onChange={(e) => setHastaTelefon(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Telefon"
+              />
+
+              <textarea
+                value={hastaAdresi}
+                onChange={(e) => setHastaAdresi(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-24"
+                placeholder="Adres"
+              />
+
+              <textarea
+                value={merkezNotu}
+                onChange={(e) => setMerkezNotu(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-24"
+                placeholder="Merkez notu"
+              />
+
+              <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-black">
+                Hasta Kaydı Aç
+              </button>
+            </form>
+          </section>
+
+          <section className="lg:col-span-2 bg-white rounded-3xl shadow p-6">
+            <h2 className="text-xl font-black text-slate-900 mb-4">
+              Aktif Hasta Kayıtları
+            </h2>
+
+            <div className="space-y-4">
+              {hastaKayitlari.length === 0 && (
+                <p className="text-slate-500">Aktif hasta kaydı bulunmuyor.</p>
+              )}
+
+              {hastaKayitlari.map((kayit) => {
+                const toplam = toplamTutarHesapla(kayit);
+
+                return (
+                  <div key={kayit.id} className="border border-slate-200 rounded-2xl p-5">
+                    <div className="flex flex-col md:flex-row md:justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-black text-slate-900">
+                          {kayit.hastalar?.hasta_adi}
+                        </h3>
+                        <p className="text-sm text-slate-600">
+                          {kayit.hastalar?.telefon || "Telefon yok"}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          {kayit.hastalar?.adres || "Adres yok"}
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="font-black text-slate-900">{kayit.durum}</p>
+                        <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-3 mt-4">
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-xs text-slate-500">Toplam Tutar</p>
+                        <p className="font-black text-slate-900">
+                          {toplam.toLocaleString("tr-TR")} TL
+                        </p>
+                      </div>
+
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-xs text-slate-500">Ödeme Durumu</p>
+                        <p className="font-black text-slate-900">
+                          {kayit.odeme_durumu}
+                        </p>
+                      </div>
+
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-xs text-slate-500">Durum</p>
+                        <p className="font-black text-slate-900">{kayit.durum}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setSeciliKayit(kayit)}
+                      className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-black"
+                    >
+                      Detayı Aç
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="lg:col-span-3 bg-white rounded-3xl shadow p-6">
+            <h2 className="text-xl font-black text-slate-900 mb-4">
+              Hizmet Yönetimi
+            </h2>
+
+            <form
+              onSubmit={hizmetKatalogunaEkle}
+              className="grid md:grid-cols-5 gap-3 mb-5"
+            >
+              <input
+                value={yeniHizmetAdi}
+                onChange={(e) => setYeniHizmetAdi(e.target.value)}
+                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Hizmet adı"
+              />
+
+              <input
+                value={yeniHizmetFiyat}
+                onChange={(e) => setYeniHizmetFiyat(e.target.value)}
+                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Fiyat"
+              />
+
+              <input
+                value={yeniHizmetKategori}
+                onChange={(e) => setYeniHizmetKategori(e.target.value)}
+                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Kategori"
+              />
+
+              <input
+                value={yeniHizmetAciklama}
+                onChange={(e) => setYeniHizmetAciklama(e.target.value)}
+                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                placeholder="Açıklama"
+              />
+
+              <button className="bg-blue-600 text-white rounded-xl font-black">
+                Hizmet Ekle
+              </button>
+            </form>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {hizmetler.map((hizmet) => (
+                <div key={hizmet.id} className="border border-slate-200 rounded-2xl p-4">
+                  <div className="flex justify-between gap-3">
+                    <div>
+                      <h3 className="font-black text-slate-900">
+                        {hizmet.hizmet_adi}
+                      </h3>
+                      <p className="text-sm text-slate-500">{hizmet.kategori}</p>
+                      <p className="text-sm text-slate-500">{hizmet.aciklama}</p>
+                    </div>
+
+                    <p className="font-black text-slate-900">
+                      {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => hizmetFiyatGuncelle(hizmet)}
+                      className="bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-bold"
+                    >
+                      Fiyat Düzenle
+                    </button>
+
+                    <button
+                      onClick={() => hizmetAktifPasifYap(hizmet)}
+                      className={`px-3 py-2 rounded-xl text-sm font-bold ${
+                        hizmet.aktif
+                          ? "bg-red-50 text-red-700"
+                          : "bg-emerald-50 text-emerald-700"
+                      }`}
+                    >
+                      {hizmet.aktif ? "Pasif Yap" : "Aktif Yap"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
 
-      {seciliAdisyon && (
+      {seciliKayit && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
             <div className="flex justify-between gap-4 mb-5">
               <div>
-                <h2 className="text-2xl font-black">{seciliAdisyon.hastalar?.hasta_adi}</h2>
-                <p className="text-sm text-slate-600">{seciliAdisyon.hastalar?.adres}</p>
+                <h2 className="text-2xl font-black text-slate-900">
+                  {seciliKayit.hastalar?.hasta_adi}
+                </h2>
+                <p className="text-sm text-slate-600">
+                  {seciliKayit.hastalar?.telefon}
+                </p>
+                <p className="text-sm text-slate-600">
+                  {seciliKayit.hastalar?.adres}
+                </p>
               </div>
 
-              <button onClick={() => setSeciliAdisyon(null)} className="bg-slate-100 px-4 py-2 rounded-xl font-black">
+              <button
+                onClick={() => setSeciliKayit(null)}
+                className="bg-slate-100 px-4 py-2 rounded-xl font-black"
+              >
                 Kapat
               </button>
             </div>
 
-            <div className="space-y-3 mb-5">
-              {(seciliAdisyon.hizmetler || []).map((h: any) => (
-                <div key={h.id} className="border rounded-xl p-3 flex justify-between">
+            <section className="grid md:grid-cols-2 gap-4 mb-5">
+              <div className="bg-blue-50 rounded-2xl p-4">
+                <p className="font-black text-blue-900">Merkez Notu</p>
+                <p className="text-blue-900 mt-1">
+                  {seciliKayit.merkez_notu || "Merkez notu yok."}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 rounded-2xl p-4">
+                <p className="font-black text-amber-900">Hemşire Notu</p>
+                <p className="text-amber-900 mt-1">
+                  {seciliKayit.hemsire_notu || "Hemşire notu yok."}
+                </p>
+              </div>
+            </section>
+
+            <section className="space-y-3 mb-5">
+              <h3 className="font-black text-slate-900">Hizmetler</h3>
+
+              {(seciliKayit.hasta_hizmetleri || []).length === 0 && (
+                <p className="text-slate-500">Henüz hizmet eklenmedi.</p>
+              )}
+
+              {(seciliKayit.hasta_hizmetleri || []).map((hizmet: any) => (
+                <div
+                  key={hizmet.id}
+                  className="border border-slate-200 rounded-xl p-3 flex justify-between gap-3"
+                >
                   <div>
-                    <p className="font-black">{h.hizmet_adi}</p>
-                    <p className="text-sm text-slate-500">{h.hizmet_tipi} • {h.aciklama}</p>
+                    <p className="font-black text-slate-900">{hizmet.hizmet_adi}</p>
+                    <p className="text-sm text-slate-500">
+                      {hizmet.hizmet_tipi} • {hizmet.aciklama}
+                    </p>
                   </div>
-                  <p className="font-black">
-                    {(Number(h.adet) * Number(h.birim_fiyat)).toLocaleString("tr-TR")} TL
+
+                  <p className="font-black text-slate-900">
+                    {(Number(hizmet.adet) * Number(hizmet.birim_fiyat)).toLocaleString(
+                      "tr-TR"
+                    )}{" "}
+                    TL
                   </p>
                 </div>
               ))}
-            </div>
+            </section>
 
             <section className="bg-slate-50 rounded-2xl p-4 mb-5">
-              <h3 className="font-black mb-3">Merkez Hizmeti Ekle</h3>
+              <h3 className="font-black text-slate-900 mb-3">Merkez Hizmeti Ekle</h3>
 
               <div className="grid md:grid-cols-4 gap-3">
                 <select
                   value={seciliHizmetId}
                   onChange={(e) => hizmetSec(e.target.value)}
-                  className="border rounded-xl px-4 py-3 md:col-span-2"
+                  className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900 md:col-span-2"
                 >
                   <option value="">Hizmet seçiniz</option>
-                  {hizmetler.filter((h) => h.aktif).map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.hizmet_adi} - {Number(h.varsayilan_fiyat).toLocaleString("tr-TR")} TL
-                    </option>
-                  ))}
+                  {hizmetler
+                    .filter((h) => h.aktif)
+                    .map((hizmet) => (
+                      <option key={hizmet.id} value={hizmet.id}>
+                        {hizmet.hizmet_adi} -{" "}
+                        {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                      </option>
+                    ))}
                 </select>
 
                 <input
-                  value={adet}
-                  onChange={(e) => setAdet(e.target.value)}
-                  className="border rounded-xl px-4 py-3"
+                  value={hizmetAdet}
+                  onChange={(e) => setHizmetAdet(e.target.value)}
+                  className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
                   placeholder="Adet"
                 />
 
                 <input
-                  value={fiyat}
-                  onChange={(e) => setFiyat(e.target.value)}
-                  className="border rounded-xl px-4 py-3"
+                  value={hizmetFiyat}
+                  onChange={(e) => setHizmetFiyat(e.target.value)}
+                  className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
                   placeholder="Fiyat"
                 />
               </div>
@@ -522,35 +726,31 @@ export default function MerkezPaneli() {
               <textarea
                 value={hizmetAciklama}
                 onChange={(e) => setHizmetAciklama(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3 mt-3"
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 mt-3"
                 placeholder="Açıklama"
               />
 
-              <button onClick={adisyonaHizmetEkle} className="mt-3 bg-slate-900 text-white px-5 py-3 rounded-xl font-black">
+              <button
+                onClick={hizmetEkle}
+                className="mt-3 bg-slate-900 text-white px-5 py-3 rounded-xl font-black"
+              >
                 Hizmeti Ekle
               </button>
             </section>
 
             <section className="flex flex-wrap gap-2">
-              <select
-                value={seciliAdisyon.odeme_durumu}
-                onChange={(e) => odemeDurumuGuncelle(seciliAdisyon.id, e.target.value)}
-                className="border rounded-xl px-4 py-3"
+              <button
+                onClick={() => merkezOnayiVer(seciliKayit.id)}
+                className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black"
               >
-                <option>Ödeme Bekliyor</option>
-                <option>Nakit Alındı</option>
-                <option>Kredi Kartı Alındı</option>
-                <option>Havale / EFT Bekleniyor</option>
-                <option>Kısmi Ödeme Alındı</option>
-                <option>Tamamı Ödendi</option>
-              </select>
-
-              <button onClick={() => adisyonDurumuGuncelle(seciliAdisyon.id, "Açık")} className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black">
-                Açık Yap
+                Merkez Onayı Ver
               </button>
 
-              <button onClick={() => adisyonDurumuGuncelle(seciliAdisyon.id, "Kapalı")} className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black">
-                Kapat
+              <button
+                onClick={() => hastaKaydiKapat(seciliKayit.id)}
+                className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black"
+              >
+                Hasta Kaydını Kapat
               </button>
             </section>
           </div>
