@@ -101,6 +101,14 @@ export default function HemsirePaneli() {
     verileriGetir(aktifKullanici.id);
   }, []);
 
+  function hastaAdiGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.hasta_adi || "hasta";
+  }
+
   async function verileriGetir(hemsireId?: string) {
     const aktifHemsireId = hemsireId || kullanici?.id;
 
@@ -323,7 +331,7 @@ export default function HemsirePaneli() {
     await supabase.from("bildirimler").insert({
       hasta_kaydi_id: seciliKayit.id,
       baslik: "Hemşire ek hizmet bildirdi",
-      mesaj: `${kullanici.ad_soyad}, ${seciliKayit.hastalar?.hasta_adi || "hasta"} kaydına ${hizmet.hizmet_adi} hizmetini ekledi.`,
+      mesaj: `${kullanici.ad_soyad}, ${hastaAdiGetir(seciliKayit)} kaydına ${hizmet.hizmet_adi} hizmetini ekledi.`,
       okundu: false,
     });
 
@@ -370,7 +378,7 @@ export default function HemsirePaneli() {
     await supabase.from("bildirimler").insert({
       hasta_kaydi_id: seciliKayit.id,
       baslik: "Hemşire ödeme durumu bildirdi",
-      mesaj: `${kullanici.ad_soyad}, ${seciliKayit.hastalar?.hasta_adi || "hasta"} kaydı için ödeme durumunu "${odemeDurumu}" olarak bildirdi.`,
+      mesaj: `${kullanici.ad_soyad}, ${hastaAdiGetir(seciliKayit)} kaydı için ödeme durumunu "${odemeDurumu}" olarak bildirdi.`,
       okundu: false,
     });
 
@@ -421,7 +429,7 @@ export default function HemsirePaneli() {
     await supabase.from("bildirimler").insert({
       hasta_kaydi_id: seciliKayit.id,
       baslik: "Hemşire merkez onayı istedi",
-      mesaj: `${kullanici.ad_soyad}, ${seciliKayit.hastalar?.hasta_adi || "hasta"} kaydını merkez onayına gönderdi.`,
+      mesaj: `${kullanici.ad_soyad}, ${hastaAdiGetir(seciliKayit)} kaydını merkez onayına gönderdi.`,
       okundu: false,
     });
 
@@ -529,7 +537,7 @@ export default function HemsirePaneli() {
                   <div className="flex flex-col md:flex-row md:justify-between gap-4">
                     <div>
                       <h3 className="text-xl font-black text-slate-900">
-                        {kayit.hastalar?.hasta_adi || "Hasta adı yok"}
+                        {hastaAdiGetir(kayit) || "Hasta adı yok"}
                       </h3>
                       <p className="text-sm text-slate-600">
                         {kayit.hastalar?.telefon || "Telefon yok"}
@@ -591,7 +599,7 @@ export default function HemsirePaneli() {
             {gecmisKayitlar.map((kayit) => (
               <div key={kayit.id} className="border border-slate-200 rounded-2xl p-4">
                 <h3 className="font-black text-slate-900">
-                  {kayit.hastalar?.hasta_adi}
+                  {hastaAdiGetir(kayit)}
                 </h3>
                 <p className="text-sm text-slate-600">{kayit.hastalar?.telefon}</p>
                 <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
@@ -613,7 +621,7 @@ export default function HemsirePaneli() {
             <div className="flex justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">
-                  {seciliKayit.hastalar?.hasta_adi || "Hasta adı yok"}
+                  {hastaAdiGetir(seciliKayit)}
                 </h2>
                 <p className="text-sm text-slate-600">
                   {seciliKayit.hastalar?.telefon}
