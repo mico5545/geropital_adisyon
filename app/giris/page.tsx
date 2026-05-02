@@ -6,11 +6,12 @@ import { supabaseAl } from "@/kutuphane/supabase";
 
 export default function GirisSayfasi() {
   const router = useRouter();
+  const supabase = supabaseAl();
 
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
-  const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState("");
+  const [yukleniyor, setYukleniyor] = useState(false);
 
   async function girisYap(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,7 +19,7 @@ export default function GirisSayfasi() {
     setHata("");
     setYukleniyor(true);
 
-    const { data, error } = await supabaseAl()
+    const { data, error } = await supabase
       .from("kullanicilar")
       .select("*")
       .eq("kullanici_adi", kullaniciAdi)
@@ -40,52 +41,35 @@ export default function GirisSayfasi() {
       return;
     }
 
-    if (data.rol === "hemsire") {
-      router.push("/hemsire-paneli");
-      return;
-    }
+    router.push("/hemsire-paneli");
   }
 
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center p-5">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-slate-900">
-            Geropital Adisyon
-          </h1>
+        <h1 className="text-3xl font-black text-slate-900 text-center">
+          Geropital İş Talimatı
+        </h1>
 
-          <p className="text-slate-600 mt-2">
-            Merkez ve hemşire giriş sistemi
-          </p>
-        </div>
+        <p className="text-slate-600 text-center mt-2">
+          Merkez ve hemşire giriş ekranı
+        </p>
 
-        <form onSubmit={girisYap} className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-slate-800 mb-2">
-              Kullanıcı Adı
-            </label>
+        <form onSubmit={girisYap} className="space-y-4 mt-8">
+          <input
+            value={kullaniciAdi}
+            onChange={(e) => setKullaniciAdi(e.target.value)}
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+            placeholder="Kullanıcı adı"
+          />
 
-            <input
-              value={kullaniciAdi}
-              onChange={(e) => setKullaniciAdi(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-              placeholder="kullanıcı adı"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-800 mb-2">
-              Şifre
-            </label>
-
-            <input
-              type="password"
-              value={sifre}
-              onChange={(e) => setSifre(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-              placeholder="şifre"
-            />
-          </div>
+          <input
+            type="password"
+            value={sifre}
+            onChange={(e) => setSifre(e.target.value)}
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+            placeholder="Şifre"
+          />
 
           {hata && (
             <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
@@ -94,7 +78,6 @@ export default function GirisSayfasi() {
           )}
 
           <button
-            type="submit"
             disabled={yukleniyor}
             className="w-full bg-blue-600 text-white rounded-xl py-3 font-black"
           >
@@ -102,12 +85,13 @@ export default function GirisSayfasi() {
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-slate-600 bg-slate-50 rounded-xl p-4 space-y-1">
-          <p className="font-bold">Hazır Kullanıcılar</p>
-          <p>merkez / 1234</p>
-          <p>hemsireelif / 1234</p>
-          <p>hemsirezeynep / 1234</p>
-          <p>hemsiremerve / 1234</p>
+        <div className="mt-6 bg-slate-50 rounded-xl p-4 text-sm text-slate-700">
+          <p>
+            <b>Merkez:</b> merkez / 1234
+          </p>
+          <p>
+            <b>Hemşire:</b> hemsire / 1234
+          </p>
         </div>
       </div>
     </main>
