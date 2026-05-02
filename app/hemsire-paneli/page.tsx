@@ -109,6 +109,22 @@ export default function HemsirePaneli() {
     return hasta?.hasta_adi || "hasta";
   }
 
+  function hastaTelefonGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.telefon || "Telefon yok";
+  }
+
+  function hastaAdresGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.adres || "Adres yok";
+  }
+
   async function verileriGetir(hemsireId?: string) {
     const aktifHemsireId = hemsireId || kullanici?.id;
 
@@ -540,10 +556,10 @@ export default function HemsirePaneli() {
                         {hastaAdiGetir(kayit) || "Hasta adı yok"}
                       </h3>
                       <p className="text-sm text-slate-600">
-                        {kayit.hastalar?.telefon || "Telefon yok"}
+                        {hastaTelefonGetir(kayit)}
                       </p>
                       <p className="text-sm text-slate-600">
-                        {kayit.hastalar?.adres || "Adres yok"}
+                        {hastaAdresGetir(kayit)}
                       </p>
                     </div>
 
@@ -601,7 +617,7 @@ export default function HemsirePaneli() {
                 <h3 className="font-black text-slate-900">
                   {hastaAdiGetir(kayit)}
                 </h3>
-                <p className="text-sm text-slate-600">{kayit.hastalar?.telefon}</p>
+                <p className="text-sm text-slate-600">{hastaTelefonGetir(kayit)}</p>
                 <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
                 <button
                   onClick={() => modalAc(kayit)}
@@ -624,10 +640,10 @@ export default function HemsirePaneli() {
                   {hastaAdiGetir(seciliKayit)}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  {seciliKayit.hastalar?.telefon}
+                  {hastaTelefonGetir(seciliKayit)}
                 </p>
                 <p className="text-sm text-slate-600">
-                  {seciliKayit.hastalar?.adres}
+                  {hastaAdresGetir(seciliKayit)}
                 </p>
               </div>
 

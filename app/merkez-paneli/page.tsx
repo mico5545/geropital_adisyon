@@ -307,6 +307,30 @@ export default function MerkezPaneli() {
     }, 0);
   }
 
+  function hastaAdiGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.hasta_adi || "hasta";
+  }
+
+  function hastaTelefonGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.telefon || "Telefon yok";
+  }
+
+  function hastaAdresGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.adres || "Adres yok";
+  }
+
   async function hastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -690,13 +714,13 @@ export default function MerkezPaneli() {
                     <div className="flex flex-col md:flex-row md:justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-black text-slate-900">
-                          {kayit.hastalar?.hasta_adi || "Hasta adı yok"}
+                          {hastaAdiGetir(kayit)}
                         </h3>
                         <p className="text-sm text-slate-600">
-                          {kayit.hastalar?.telefon || "Telefon yok"}
+                          {hastaTelefonGetir(kayit)}
                         </p>
                         <p className="text-sm text-slate-600">
-                          {kayit.hastalar?.adres || "Adres yok"}
+                          {hastaAdresGetir(kayit)}
                         </p>
                       </div>
 
@@ -839,13 +863,13 @@ export default function MerkezPaneli() {
             <div className="flex justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">
-                  {seciliKayit.hastalar?.hasta_adi || "Hasta adı yok"}
+                  {hastaAdiGetir(seciliKayit)}
                 </h2>
                 <p className="text-sm text-slate-600">
-                  {seciliKayit.hastalar?.telefon}
+                  {hastaTelefonGetir(seciliKayit)}
                 </p>
                 <p className="text-sm text-slate-600">
-                  {seciliKayit.hastalar?.adres}
+                  {hastaAdresGetir(seciliKayit)}
                 </p>
               </div>
 

@@ -90,6 +90,30 @@ export default function KapatilanHastaKayitlari() {
     setYukleniyor(false);
   }
 
+  function hastaAdiGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.hasta_adi || "hasta";
+  }
+
+  function hastaTelefonGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.telefon || "Telefon yok";
+  }
+
+  function hastaAdresGetir(kayit: HastaKaydi) {
+    const hasta = Array.isArray(kayit.hastalar)
+      ? kayit.hastalar[0]
+      : kayit.hastalar;
+
+    return hasta?.adres || "Adres yok";
+  }
+
   function toplamHesapla(kayit: HastaKaydi) {
     return (kayit.hasta_hizmetleri || []).reduce((toplam, hizmet) => {
       return toplam + Number(hizmet.adet) * Number(hizmet.birim_fiyat);
@@ -139,15 +163,15 @@ export default function KapatilanHastaKayitlari() {
             {kayitlar.map((kayit) => (
               <div key={kayit.id} className="border border-slate-200 rounded-2xl p-5">
                 <h2 className="text-xl font-black text-slate-900">
-                  {kayit.hastalar?.hasta_adi || "Hasta adı yok"}
+                  {hastaAdiGetir(kayit)}
                 </h2>
 
                 <p className="text-sm text-slate-600 mt-1">
-                  {kayit.hastalar?.telefon || "Telefon yok"}
+                  {hastaTelefonGetir(kayit)}
                 </p>
 
                 <p className="text-sm text-slate-600">
-                  {kayit.hastalar?.adres || "Adres yok"}
+                  {hastaAdresGetir(kayit)}
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 mt-4">
@@ -200,11 +224,11 @@ export default function KapatilanHastaKayitlari() {
             </div>
 
             <h2 className="text-3xl font-black text-slate-900">
-              {seciliKayit.hastalar?.hasta_adi}
+              {hastaAdiGetir(seciliKayit)}
             </h2>
 
-            <p className="text-slate-600 mt-1">{seciliKayit.hastalar?.telefon}</p>
-            <p className="text-slate-600">{seciliKayit.hastalar?.adres}</p>
+            <p className="text-slate-600 mt-1">{hastaTelefonGetir(seciliKayit)}</p>
+            <p className="text-slate-600">{hastaAdresGetir(seciliKayit)}</p>
 
             <div className="grid md:grid-cols-3 gap-3 mt-5">
               <div className="bg-slate-50 rounded-xl p-4">
