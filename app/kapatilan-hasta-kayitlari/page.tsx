@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
+import KurumsalLogo from "@/bilesenler/KurumsalLogo";
+import KurumsalNavbar from "@/bilesenler/KurumsalNavbar";
+import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
 type HastaKaydi = {
   id: string;
@@ -90,6 +93,29 @@ export default function KapatilanHastaKayitlari() {
     setYukleniyor(false);
   }
 
+  async function kaydiKaliciSil(kayitId: string) {
+    const onay = confirm(
+      "Bu kapatılan hasta kaydı kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?"
+    );
+
+    if (!onay) return;
+
+    const { error } = await supabase
+      .from("hasta_kayitlari")
+      .delete()
+      .eq("id", kayitId);
+
+    if (error) {
+      console.log("Kayıt silme hatası:", error);
+      alert("Kayıt silinemedi.");
+      return;
+    }
+
+    setSeciliKayit(null);
+    await verileriGetir();
+    alert("Kayıt kalıcı olarak silindi.");
+  }
+
   function hastaAdiGetir(kayit: HastaKaydi) {
     const hasta = Array.isArray(kayit.hastalar)
       ? kayit.hastalar[0]
@@ -114,6 +140,18 @@ export default function KapatilanHastaKayitlari() {
     return hasta?.adres || "Adres yok";
   }
 
+  function tarihSaatFormatla(tarih: string | null) {
+    if (!tarih) return "-";
+
+    return new Date(tarih).toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   function toplamHesapla(kayit: HastaKaydi) {
     return (kayit.hasta_hizmetleri || []).reduce((toplam, hizmet) => {
       return toplam + Number(hizmet.adet) * Number(hizmet.birim_fiyat);
@@ -129,32 +167,28 @@ export default function KapatilanHastaKayitlari() {
     window.print();
   }
 
-  if (yukleniyor) {
-    return <main className="p-10 font-black">Yükleniyor...</main>;
-  }
-
   return (
-    <main className="min-h-screen bg-slate-100 p-5">
-      <div className="max-w-7xl mx-auto">
-        <header className="bg-white rounded-3xl shadow p-6 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900">
-              Kapatılan Hasta Kayıtları
-            </h1>
-            <p className="text-slate-600 mt-1">
-              Tamamlanan kayıtlar, hizmetler, ödeme bilgileri ve notlar.
-            </p>
-          </div>
+    <main className="min-h-screen kurumsal-arka-plan">
+      <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
+        <div className="max-w-7xl mx-auto px-5">
+          <h1 className="text-3xl lg:text-4xl font-black text-[#144a7b] mb-2">Kapalı Hasta Kayıtları</h1>
+          <p className="text-sm text-slate-600">Tamamlanan hasta kayıtları ve özet bilgileri</p>
+        </div>
+      </section>
 
-          <a
-            href="/merkez-paneli"
-            className="bg-slate-900 text-white px-5 py-3 rounded-xl font-black text-center"
-          >
-            Merkez Paneline Dön
-          </a>
-        </header>
+      <KurumsalHeader
+        linkler={[
+          { href: "/merkez-paneli", label: "Merkez Paneli" },
+          { href: "/gunluk-saha-plani", label: "G\u00fcnl\u00fck Saha Plan\u0131" },
+          { href: "/hizmet-yonetimi", label: "Hizmet Y\u00f6netimi" },
+          { href: "/bildirimler", label: "Bildirimler" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Kaapat\u0131lan Kay\u0131tlar" },
 
-        <section className="bg-white rounded-3xl shadow p-6">
+        ]}
+      />
+
+      <div className="max-w-7xl mx-auto p-5">
+        <section className="kurumsal-kart rounded-3xl p-6">
           {kayitlar.length === 0 && (
             <p className="text-slate-500">Kapatılan hasta kaydı bulunmuyor.</p>
           )}
@@ -174,31 +208,29 @@ export default function KapatilanHastaKayitlari() {
                   {hastaAdresGetir(kayit)}
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs text-slate-500">Toplam</p>
-                    <p className="font-black">
-                      {toplamHesapla(kayit).toLocaleString("tr-TR")} TL
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 rounded-xl p-3">
-                    <p className="text-xs text-slate-500">Ödeme</p>
-                    <p className="font-black">{kayit.odeme_durumu}</p>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-500 mt-4">
-                  Kapanış: {tarihFormatla(kayit.kapanis_tarihi)}
+              <p className="text-xs text-slate-500 mt-2">
+                Kayıt Açılış: {tarihSaatFormatla(kayit.olusturma_tarihi)}
+              </p>
+              {kayit.kapanis_tarihi && (
+                <p className="text-xs text-slate-500">
+                  Kapanış: {tarihSaatFormatla(kayit.kapanis_tarihi)}
                 </p>
+              )}
 
-                <button
-                  onClick={() => setSeciliKayit(kayit)}
-                  className="w-full mt-4 bg-slate-900 text-white rounded-xl py-3 font-black"
-                >
-                  Detayı Aç
-                </button>
-              </div>
+              <button
+                onClick={() => setSeciliKayit(kayit)}
+                className="w-full mt-4 bg-slate-900 text-white rounded-xl py-3 font-black"
+              >
+                Detayı Aç
+              </button>
+
+              <button
+                onClick={() => kaydiKaliciSil(kayit.id)}
+                className="w-full mt-2 bg-red-50 text-red-700 rounded-xl py-3 font-black transition hover:bg-red-100"
+              >
+                Kalıcı Sil
+              </button>
+            </div>
             ))}
           </div>
         </section>
@@ -206,7 +238,7 @@ export default function KapatilanHastaKayitlari() {
 
       {seciliKayit && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 print:static print:bg-white">
-          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 print:max-h-none print:shadow-none">
+          <div className="kurumsal-kart rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6 print:max-h-none print:shadow-none">
             <div className="flex justify-between gap-4 mb-5 print:hidden">
               <button
                 onClick={() => setSeciliKayit(null)}
@@ -215,12 +247,21 @@ export default function KapatilanHastaKayitlari() {
                 Kapat
               </button>
 
-              <button
-                onClick={yazdir}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl font-black"
-              >
-                Çıktı Al
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => kaydiKaliciSil(seciliKayit.id)}
+                  className="bg-red-50 text-red-700 px-4 py-2 rounded-xl font-black transition hover:bg-red-100 print:hidden"
+                >
+                  Kalıcı Sil
+                </button>
+
+                <button
+                  onClick={yazdir}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-xl font-black"
+                >
+                  Çıktı Al
+                </button>
+              </div>
             </div>
 
             <h2 className="text-3xl font-black text-slate-900">
@@ -246,7 +287,7 @@ export default function KapatilanHastaKayitlari() {
               <div className="bg-slate-50 rounded-xl p-4">
                 <p className="text-sm text-slate-500">Kapanış Tarihi</p>
                 <p className="text-sm font-black">
-                  {tarihFormatla(seciliKayit.kapanis_tarihi)}
+                  {seciliKayit ? tarihSaatFormatla(seciliKayit.kapanis_tarihi) : "-"}
                 </p>
               </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
+import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
 type Bildirim = {
   id: string;
@@ -15,6 +16,11 @@ type Bildirim = {
 export default function BildirimlerSayfasi() {
   const [bildirimler, setBildirimler] = useState<Bildirim[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
+
+  function cikisYap() {
+    localStorage.removeItem("kullanici");
+    window.location.href = "/giris";
+  }
 
   useEffect(() => {
     bildirimleriGetir();
@@ -53,37 +59,33 @@ export default function BildirimlerSayfasi() {
     return new Date(tarih).toLocaleString("tr-TR");
   }
 
-  if (yukleniyor) {
-    return <main className="p-10 font-black">Yükleniyor...</main>;
-  }
-
   return (
-    <main className="min-h-screen bg-slate-100 p-5">
-      <div className="max-w-5xl mx-auto">
-        <header className="bg-white rounded-3xl shadow p-6 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900">Bildirimler</h1>
-            <p className="text-slate-600 mt-1">
-              Hemşire tarafından merkeze gönderilen onay, ödeme ve hizmet bildirimleri.
-            </p>
-          </div>
+    <main className="min-h-screen kurumsal-arka-plan">
+      <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
+        <div className="max-w-7xl mx-auto px-5">
+          <h1 className="text-3xl lg:text-4xl font-black text-[#144a7b] mb-2">Bildirimler</h1>
+          <p className="text-sm text-slate-600">Sistem bildirimleri ve merkez onayı bekleyen işlemler</p>
+        </div>
+      </section>
 
-          <div className="flex gap-2">
-            <button
-              onClick={hepsiniOkunduYap}
-              className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black"
-            >
-              Hepsini Okundu Yap
-            </button>
-
-            <a
-              href="/merkez-paneli"
-              className="bg-slate-900 text-white px-5 py-3 rounded-xl font-black"
-            >
-              Merkez Paneli
-            </a>
-          </div>
-        </header>
+      <KurumsalHeader
+        linkler={[
+          { href: "/merkez-paneli", label: "Merkez Paneli" },
+          { href: "/gunluk-saha-plani", label: "Günlük Saha Planı" },
+          { href: "/hizmet-yonetimi", label: "Hizmet Yönetimi" },
+          { href: "/bildirimler", label: "Bildirimler" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Kapatılan Kayıtlar" },
+        ]}
+        sagAlan={
+          <button
+            onClick={cikisYap}
+            className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold transition hover:bg-slate-800"
+          >
+            Çıkış
+          </button>
+        }
+      />
+      <div className="max-w-7xl mx-auto p-5">
 
         <section className="space-y-3">
           {bildirimler.length === 0 && (

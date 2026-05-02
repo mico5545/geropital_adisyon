@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
+import KurumsalLogo from "@/bilesenler/KurumsalLogo";
+import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
 type Kullanici = {
   id: string;
@@ -109,11 +111,6 @@ export default function MerkezPaneli() {
 
     const aktifKullanici = JSON.parse(kayitliKullanici);
 
-    if (aktifKullanici.rol !== "merkez") {
-      window.location.href = "/hemsire-paneli";
-      return;
-    }
-
     setKullanici(aktifKullanici);
 
     verileriGetir();
@@ -218,9 +215,12 @@ export default function MerkezPaneli() {
   }
 
   function bildirimSesiniAktifEt() {
-    sesAktifRef.current = true;
-    setSesAktif(true);
-    bildirimSesiCal();
+    sesAktifRef.current = !sesAktifRef.current;
+    setSesAktif(!sesAktif);
+    
+    if (sesAktifRef.current) {
+      bildirimSesiCal();
+    }
   }
 
   function toastGoster(mesaj: string) {
@@ -331,6 +331,18 @@ export default function MerkezPaneli() {
     return hasta?.adres || "Adres yok";
   }
 
+  function tarihSaatFormatla(tarih: string | null) {
+    if (!tarih) return "-";
+
+    return new Date(tarih).toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   async function hastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -382,11 +394,32 @@ export default function MerkezPaneli() {
       return;
     }
 
+    if (seciliHizmetId) {
+      const { error: hizmetHata } = await supabase
+        .from("hasta_hizmetleri")
+        .insert({
+          hasta_kaydi_id: kayit.id,
+          hizmet_adi: hizmetler.find((h) => h.id === seciliHizmetId)?.hizmet_adi || "",
+          hizmet_tipi: "Merkez Kaydı",
+          adet: Number(hizmetAdet),
+          birim_fiyat: Number(hizmetFiyat),
+          aciklama: hizmetAciklama || "",
+        });
+
+      if (hizmetHata) {
+        console.log("Hizmet ekleme hatası:", hizmetHata);
+      }
+    }
+
     setHastaAdi("");
     setHastaTelefon("");
     setHastaAdresi("");
     setHemsireId("");
     setMerkezNotu("");
+    setSeciliHizmetId("");
+    setHizmetAdet("1");
+    setHizmetFiyat("");
+    setHizmetAciklama("");
 
     await verileriGetir();
     alert("Hasta kaydı oluşturuldu.");
@@ -554,82 +587,69 @@ export default function MerkezPaneli() {
     window.location.href = "/giris";
   }
 
-  if (yukleniyor) {
-    return (
-      <main className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <p className="text-slate-700 font-black">Yükleniyor...</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-slate-100">
-      <header className="bg-white border-b border-slate-200 p-5">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900">
-              Geropital İş Talimatı
-            </h1>
-            <p className="text-sm text-slate-600">
-              Merkez hasta kaydı, hizmet yönetimi ve onay ekranı
-            </p>
-          </div>
+    <main className="min-h-screen kurumsal-arka-plan">
+      <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
+        <div className="max-w-7xl mx-auto px-5">
+          <h1 className="text-3xl lg:text-4xl font-black text-[#144a7b] mb-2">Hasta Kaydı</h1>
+          <p className="text-sm text-slate-600">Merkez hasta kaydı, saha planı, hizmet ve bildirim yönetimi</p>
+        </div>
+      </section>
 
-          <div className="flex flex-wrap gap-2">
+      <KurumsalHeader
+        linkler={[
+          { href: "/merkez-paneli", label: "Merkez Paneli" },
+          { href: "/gunluk-saha-plani", label: "Günlük Saha Planı" },
+          { href: "/hizmet-yonetimi", label: "Hizmet Yönetimi" },
+          { href: "/bildirimler", label: `Bildirimler (${bildirimler.length})` },
+          { href: "/kapatilan-hasta-kayitlari", label: "Kapatılan Kayıtlar" },
+        ]}
+        sagAlan={
+          <div className="flex gap-3">
             <button
               onClick={bildirimSesiniAktifEt}
-              className="bg-emerald-100 text-emerald-900 px-4 py-2 rounded-xl font-bold"
+              className={`px-4 py-2 rounded-xl font-bold transition ${
+                sesAktif
+                  ? "bg-green-100 text-green-900 hover:bg-green-200"
+                  : "bg-red-100 text-red-900 hover:bg-red-200"
+              }`}
             >
-              {sesAktif ? "Bildirim Sesi Aktif" : "Bildirim Sesini Aktif Et"}
+              {sesAktif ? "Ses Aktif" : "Sesi Aktif Et"}
             </button>
-
-            <a
-              href="/bildirimler"
-              className="bg-amber-100 text-amber-900 px-4 py-2 rounded-xl font-bold"
-            >
-              Bildirimler ({bildirimler.length})
-            </a>
-
-            <a
-              href="/kapatilan-hasta-kayitlari"
-              className="bg-slate-100 text-slate-900 px-4 py-2 rounded-xl font-bold"
-            >
-              Kapatılan Kayıtlar
-            </a>
 
             <button
               onClick={cikisYap}
-              className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
+              className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold transition hover:bg-slate-800"
             >
               Çıkış
             </button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-7xl mx-auto p-5">
         {bildirimler.length > 0 && (
-          <section className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-6">
-            <h2 className="text-xl font-black text-amber-900 mb-3">
-              Merkez Onayı Bekleyen Bildirimler
+          <section className="kurumsal-kart kurumsal-hover rounded-3xl p-6 mb-6 border-l-4 border-l-amber-500 yumusak-giris">
+            <h2 className="text-lg font-black text-slate-900 mb-4">
+              ⚠️ Merkez Onayı Bekleyen Bildirimler
             </h2>
 
             <div className="space-y-3">
               {bildirimler.map((bildirim) => (
                 <div
                   key={bildirim.id}
-                  className="bg-white rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                  className="kurumsal-hover rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-amber-100 bg-amber-50/40"
                 >
                   <div>
-                    <p className="font-black text-slate-900">
+                    <p className="font-bold text-slate-900">
                       {bildirim.baslik}
                     </p>
-                    <p className="text-sm text-slate-600">{bildirim.mesaj}</p>
+                    <p className="text-sm text-slate-600 mt-1">{bildirim.mesaj}</p>
                   </div>
 
                   <button
                     onClick={() => merkezOnayiVer(bildirim.hasta_kaydi_id)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold"
+                    className="kurumsal-buton px-5 py-2 rounded-xl font-bold text-sm flex-shrink-0"
                   >
                     Onayla
                   </button>
@@ -640,7 +660,7 @@ export default function MerkezPaneli() {
         )}
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <section className="bg-white rounded-3xl shadow p-6 h-fit">
+          <section className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit yumusak-giris">
             <h2 className="text-xl font-black text-slate-900 mb-4">
               Yeni Hasta Kaydı Aç
             </h2>
@@ -680,6 +700,19 @@ export default function MerkezPaneli() {
                 ))}
               </select>
 
+              <select
+                value={seciliHizmetId}
+                onChange={(e) => hizmetSec(e.target.value)}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              >
+                <option value="">Hizmet seçiniz </option>
+                {hizmetler.filter((h) => h.aktif).map((hizmet) => (
+                  <option key={hizmet.id} value={hizmet.id}>
+                    {hizmet.hizmet_adi} - {hizmet.fiyat} TL
+                  </option>
+                ))}
+              </select>
+
               <textarea
                 value={merkezNotu}
                 onChange={(e) => setMerkezNotu(e.target.value)}
@@ -687,13 +720,13 @@ export default function MerkezPaneli() {
                 placeholder="Merkez notu"
               />
 
-              <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-black">
+              <button className="w-full kurumsal-buton rounded-xl py-3 font-bold">
                 Hasta Kaydı Aç
               </button>
             </form>
           </section>
 
-          <section className="lg:col-span-2 bg-white rounded-3xl shadow p-6">
+          <section className="lg:col-span-2 kurumsal-kart kurumsal-hover rounded-3xl p-6 yumusak-giris">
             <h2 className="text-xl font-black text-slate-900 mb-4">
               Aktif Hasta Kayıtları
             </h2>
@@ -709,7 +742,7 @@ export default function MerkezPaneli() {
                 return (
                   <div
                     key={kayit.id}
-                    className="border border-slate-200 rounded-2xl p-5"
+                    className="kurumsal-kart kurumsal-hover rounded-2xl p-5 cursor-pointer"
                   >
                     <div className="flex flex-col md:flex-row md:justify-between gap-4">
                       <div>
@@ -722,6 +755,14 @@ export default function MerkezPaneli() {
                         <p className="text-sm text-slate-600">
                           {hastaAdresGetir(kayit)}
                         </p>
+                        <p className="text-xs text-slate-500 mt-2">
+                          Kayıt Açılış: {tarihSaatFormatla(kayit.olusturma_tarihi)}
+                        </p>
+                        {kayit.kapanis_tarihi && (
+                          <p className="text-xs text-slate-500">
+                            Kapanış: {tarihSaatFormatla(kayit.kapanis_tarihi)}
+                          </p>
+                        )}
                       </div>
 
                       <div className="text-right">
@@ -733,21 +774,21 @@ export default function MerkezPaneli() {
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-3 mt-4">
-                      <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
                         <p className="text-xs text-slate-500">Toplam Tutar</p>
                         <p className="font-black text-slate-900">
                           {toplam.toLocaleString("tr-TR")} TL
                         </p>
                       </div>
 
-                      <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
                         <p className="text-xs text-slate-500">Ödeme Durumu</p>
                         <p className="font-black text-slate-900">
                           {kayit.odeme_durumu}
                         </p>
                       </div>
 
-                      <div className="bg-slate-50 rounded-xl p-3">
+                      <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
                         <p className="text-xs text-slate-500">Durum</p>
                         <p className="font-black text-slate-900">{kayit.durum}</p>
                       </div>
@@ -755,103 +796,13 @@ export default function MerkezPaneli() {
 
                     <button
                       onClick={() => setSeciliKayit(kayit)}
-                      className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-black"
+                      className="w-full mt-4 kurumsal-buton py-3 rounded-xl font-bold"
                     >
-                      Detayı Aç
+                      Detayları Aç
                     </button>
                   </div>
                 );
               })}
-            </div>
-          </section>
-
-          <section className="lg:col-span-3 bg-white rounded-3xl shadow p-6">
-            <h2 className="text-xl font-black text-slate-900 mb-4">
-              Hizmet Yönetimi
-            </h2>
-
-            <form
-              onSubmit={hizmetKatalogunaEkle}
-              className="grid md:grid-cols-5 gap-3 mb-5"
-            >
-              <input
-                value={yeniHizmetAdi}
-                onChange={(e) => setYeniHizmetAdi(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-                placeholder="Hizmet adı"
-              />
-
-              <input
-                value={yeniHizmetFiyat}
-                onChange={(e) => setYeniHizmetFiyat(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-                placeholder="Fiyat"
-              />
-
-              <input
-                value={yeniHizmetKategori}
-                onChange={(e) => setYeniHizmetKategori(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-                placeholder="Kategori"
-              />
-
-              <input
-                value={yeniHizmetAciklama}
-                onChange={(e) => setYeniHizmetAciklama(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-                placeholder="Açıklama"
-              />
-
-              <button className="bg-blue-600 text-white rounded-xl font-black">
-                Hizmet Ekle
-              </button>
-            </form>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {hizmetler.map((hizmet) => (
-                <div
-                  key={hizmet.id}
-                  className="border border-slate-200 rounded-2xl p-4"
-                >
-                  <div className="flex justify-between gap-3">
-                    <div>
-                      <h3 className="font-black text-slate-900">
-                        {hizmet.hizmet_adi}
-                      </h3>
-                      <p className="text-sm text-slate-500">
-                        {hizmet.kategori}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        {hizmet.aciklama}
-                      </p>
-                    </div>
-
-                    <p className="font-black text-slate-900">
-                      {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => hizmetDuzenlemeAc(hizmet)}
-                      className="bg-slate-900 text-white px-3 py-2 rounded-xl text-sm font-bold"
-                    >
-                      Düzenle
-                    </button>
-
-                    <button
-                      onClick={() => hizmetAktifPasifYap(hizmet)}
-                      className={`px-3 py-2 rounded-xl text-sm font-bold ${
-                        hizmet.aktif
-                          ? "bg-red-50 text-red-700"
-                          : "bg-emerald-50 text-emerald-700"
-                      }`}
-                    >
-                      {hizmet.aktif ? "Pasif Yap" : "Aktif Yap"}
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           </section>
         </div>
@@ -859,7 +810,7 @@ export default function MerkezPaneli() {
 
       {seciliKayit && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
+          <div className="kurumsal-kart kurumsal-hover rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
             <div className="flex justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">
@@ -983,14 +934,14 @@ export default function MerkezPaneli() {
             <section className="flex flex-wrap gap-2">
               <button
                 onClick={() => merkezOnayiVer(seciliKayit.id)}
-                className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black"
+                className="kurumsal-buton px-5 py-3 rounded-xl font-black"
               >
                 Merkez Onayı Ver
               </button>
 
               <button
                 onClick={() => hastaKaydiKapat(seciliKayit.id)}
-                className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black"
+                className="bg-emerald-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-emerald-700"
               >
                 Hasta Kaydını Kapat
               </button>
@@ -1021,7 +972,7 @@ export default function MerkezPaneli() {
 
       {duzenlenenHizmet && (
         <div className="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl">
+          <div className="kurumsal-kart kurumsal-hover rounded-3xl w-full max-w-2xl p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-black text-slate-900">
@@ -1071,7 +1022,7 @@ export default function MerkezPaneli() {
 
               <button
                 onClick={hizmetDuzenleKaydet}
-                className="w-full bg-blue-600 text-white rounded-xl py-3 font-black"
+                className="w-full kurumsal-buton rounded-xl py-3 font-black"
               >
                 Değişiklikleri Kaydet
               </button>

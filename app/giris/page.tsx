@@ -35,12 +35,7 @@ export default function GirisSayfasi() {
 
     localStorage.setItem("kullanici", JSON.stringify(data));
 
-    if (data.rol === "merkez") {
-      router.push("/merkez-paneli");
-      return;
-    }
-
-    router.push("/hemsire-paneli");
+    router.push("/merkez-paneli");
   }
 
   return (

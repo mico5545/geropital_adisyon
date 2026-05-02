@@ -4,12 +4,20 @@ export default function Yukleniyor() {
   return (
     <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-6">
       <div className="kurumsal-kart rounded-3xl p-10 text-center">
+        <div className="mb-6 flex justify-center">
+          <img
+            src="/logo-geropital.png"
+            alt="Geropital"
+            className="h-16 w-auto object-contain"
+          />
+        </div>
+
         <div className="flex justify-center gap-1 text-4xl font-black tracking-widest text-[#144a7b]">
           {yazi.split("").map((harf, index) => (
             <span
               key={index}
-              className="animate-pulse"
-              style={{ animationDelay: `${index * 120}ms` }}
+              className="daktilo-harf"
+              style={{ animationDelay: `${index * 130}ms` }}
             >
               {harf}
             </span>
@@ -17,7 +25,7 @@ export default function Yukleniyor() {
         </div>
 
         <p className="mt-4 text-sm font-semibold text-slate-500">
-          İş Talimatı sistemi hazırlanıyor...
+          Sayfa hazırlanıyor...
         </p>
       </div>
     </main>
