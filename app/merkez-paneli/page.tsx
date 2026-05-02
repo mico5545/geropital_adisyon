@@ -78,11 +78,11 @@ export default function MerkezPaneli() {
       .order("hizmet_adi");
 
     const { data: adisyonData } = await supabase
-      .from("adisyonlar")
+      .from("hasta_kayitlari")
       .select(`
         *,
         hastalar (*),
-        hemsire:kullanicilar!adisyonlar_hemsire_id_fkey (*),
+        hemsire:kullanicilar!hasta_kayitlari_hemsire_id_fkey (*),
         hizmetler (*),
         odemeler (*)
       `)
@@ -108,16 +108,17 @@ export default function MerkezPaneli() {
     );
   }
 
-  async function adisyonAc(e: React.FormEvent<HTMLFormElement>) {
+  async function hastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!kullanici) return;
 
-    if (!hastaAdi || !hemsireId) {
-      alert("Hasta adı ve hemşire seçimi zorunludur.");
+    if (!hastaAdi) {
+      alert("Hasta adı zorunlu");
       return;
     }
 
+    // 1. Hasta oluştur
     const { data: hasta, error: hastaHata } = await supabase
       .from("hastalar")
       .insert({
@@ -129,28 +130,33 @@ export default function MerkezPaneli() {
       .single();
 
     if (hastaHata || !hasta) {
-      alert("Hasta oluşturulamadı.");
+      alert("Hasta oluşturulamadı");
       return;
     }
 
-    const { error: adisyonHata } = await supabase.from("adisyonlar").insert({
-      hasta_id: hasta.id,
-      hemsire_id: hemsireId,
-      acan_kullanici_id: kullanici.id,
-      durum: "Açık",
-      odeme_durumu: "Ödeme Bekliyor",
-      merkez_notu: merkezNotu,
-    });
+    // 2. Hasta kaydı oluştur
+    const { error: kayitHata } = await supabase
+      .from("hasta_kayitlari")
+      .insert({
+        hasta_id: hasta.id,
+        hemsire_id: null,
+        acan_kullanici_id: kullanici.id,
+        durum: "Aktif",
+        odeme_durumu: "Tamamı Alınmadı",
+        merkez_notu: merkezNotu,
+      });
 
-    if (adisyonHata) {
-      alert("Adisyon oluşturulamadı.");
+    if (kayitHata) {
+      console.log(kayitHata);
+      alert("Hasta kaydı oluşturulamadı");
       return;
     }
+
+    alert("Hasta kaydı açıldı");
 
     setHastaAdi("");
     setHastaTelefon("");
     setHastaAdresi("");
-    setHemsireId("");
     setMerkezNotu("");
 
     await verileriGetir();
@@ -279,7 +285,7 @@ export default function MerkezPaneli() {
         <section className="bg-white rounded-3xl shadow p-6 h-fit">
           <h2 className="text-xl font-black mb-4">Yeni Adisyon Aç</h2>
 
-          <form onSubmit={adisyonAc} className="space-y-3">
+          <form onSubmit={hastaKaydiAc} className="space-y-3">
             <input
               value={hastaAdi}
               onChange={(e) => setHastaAdi(e.target.value)}
