@@ -153,7 +153,7 @@ export default function GunlukSahaPlani() {
 
     if (siralama === "hasta") {
       liste.sort((a, b) =>
-        (a.hastalar?.[0]?.hasta_adi || "").localeCompare(b.hastalar?.hasta_adi || "")
+       hastaAdiGetir(a).localeCompare(hastaAdiGetir(b))
       );
     }
 
