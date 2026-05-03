@@ -21,8 +21,8 @@ export default function GirisSayfasi() {
     const { data, error } = await supabase
       .from("kullanicilar")
       .select("*")
-      .eq("kullanici_adi", kullaniciAdi)
-      .eq("sifre", sifre)
+      .eq("kullanici_adi", kullaniciAdi.trim())
+      .eq("sifre", sifre.trim())
       .eq("aktif", true)
       .single();
 
@@ -35,13 +35,31 @@ export default function GirisSayfasi() {
 
     localStorage.setItem("kullanici", JSON.stringify(data));
 
-    router.push("/merkez-paneli");
+    if (data.rol === "merkez") {
+      router.push("/merkez-paneli");
+      return;
+    }
+
+    if (data.rol === "hemsire") {
+      router.push("/hemsire-paneli");
+      return;
+    }
+
+    setHata("Kullanıcı rolü tanımsız.");
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 flex items-center justify-center p-5">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8">
-        <h1 className="text-3xl font-black text-slate-900 text-center">
+    <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-5">
+      <div className="w-full max-w-md kurumsal-kart rounded-3xl p-8">
+        <div className="flex justify-center mb-5">
+          <img
+            src="/logo-geropital.png"
+            alt="Geropital"
+            className="h-16 w-auto object-contain"
+          />
+        </div>
+
+        <h1 className="text-3xl font-black text-[#144a7b] text-center">
           Geropital İş Talimatı
         </h1>
 
@@ -72,16 +90,21 @@ export default function GirisSayfasi() {
           )}
 
           <button
+            type="submit"
             disabled={yukleniyor}
-            className="w-full bg-blue-600 text-white rounded-xl py-3 font-black"
+            className="w-full kurumsal-buton rounded-xl py-3 font-black"
           >
             {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
           </button>
         </form>
 
-        <div className="mt-6 bg-slate-50 rounded-xl p-4 text-sm text-slate-700">
-          <p><b>Merkez:</b> merkez / 1234</p>
-          <p><b>Hemşire:</b> hemsire / 1234</p>
+        <div className="mt-6 bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-4 text-sm text-slate-700">
+          <p>
+            <b>Merkez:</b> merkez / 1234
+          </p>
+          <p>
+            <b>Hemşire:</b> hemsire / 1234
+          </p>
         </div>
       </div>
     </main>

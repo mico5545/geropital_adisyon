@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
-import KurumsalLogo from "@/bilesenler/KurumsalLogo";
-import KurumsalNavbar from "@/bilesenler/KurumsalNavbar";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
 type Kullanici = {
   id: string;
   kullanici_adi: string;
-  sifre: string;
   ad_soyad: string;
   rol: "merkez" | "hemsire";
   aktif: boolean;
@@ -24,6 +22,14 @@ type Hizmet = {
   aktif: boolean;
 };
 
+type HastaBilgisi = {
+  id?: string;
+  hasta_adi: string;
+  telefon: string | null;
+  adres: string | null;
+  notlar?: string | null;
+};
+
 type HastaKaydi = {
   id: string;
   durum: string;
@@ -33,13 +39,10 @@ type HastaKaydi = {
   kapanis_notu: string | null;
   olusturma_tarihi: string;
   kapanis_tarihi: string | null;
-  hastalar: {
-    id: string;
-    hasta_adi: string;
-    telefon: string | null;
-    adres: string | null;
-    notlar: string | null;
-  }[];
+  plan_tarihi: string | null;
+  plan_saati: string | null;
+  plan_notu: string | null;
+  hastalar: HastaBilgisi | HastaBilgisi[] | null;
   hasta_hizmetleri: {
     id: string;
     hizmet_adi: string;
@@ -65,8 +68,8 @@ const odemeSecenekleri = [
 
 export default function HemsirePaneli() {
   const [kullanici, setKullanici] = useState<Kullanici | null>(null);
-  const [hastaKayitlari, setHastaKayitlari] = useState<HastaKaydi[]>([]);
-  const [gecmisKayitlar, setGecmisKayitlar] = useState<HastaKaydi[]>([]);
+  const [aktifKayitlar, setAktifKayitlar] = useState<HastaKaydi[]>([]);
+  const [kapatilanKayitlar, setKapatilanKayitlar] = useState<HastaKaydi[]>([]);
   const [hizmetler, setHizmetler] = useState<Hizmet[]>([]);
   const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
   const [yukleniyor, setYukleniyor] = useState(true);
@@ -74,7 +77,7 @@ export default function HemsirePaneli() {
   const [hastaAdi, setHastaAdi] = useState("");
   const [hastaTelefon, setHastaTelefon] = useState("");
   const [hastaAdresi, setHastaAdresi] = useState("");
-  const [hemsireNotuYeniKayit, setHemsireNotuYeniKayit] = useState("");
+  const [yeniKayitNotu, setYeniKayitNotu] = useState("");
 
   const [seciliHizmetId, setSeciliHizmetId] = useState("");
   const [hizmetAdet, setHizmetAdet] = useState("1");
@@ -93,7 +96,7 @@ export default function HemsirePaneli() {
       return;
     }
 
-    const aktifKullanici = JSON.parse(kayitliKullanici);
+    const aktifKullanici = JSON.parse(kayitliKullanici) as Kullanici;
 
     if (aktifKullanici.rol !== "hemsire") {
       window.location.href = "/merkez-paneli";
@@ -104,28 +107,99 @@ export default function HemsirePaneli() {
     verileriGetir(aktifKullanici.id);
   }, []);
 
-  function hastaAdiGetir(kayit: HastaKaydi) {
-    const hasta = Array.isArray(kayit.hastalar)
-      ? kayit.hastalar[0]
-      : kayit.hastalar;
+  async function verileriGetir(hemsireId?: string) {
+    const aktifHemsireId = hemsireId || kullanici?.id;
 
-    return hasta?.hasta_adi || "hasta";
+    if (!aktifHemsireId) return;
+
+    setYukleniyor(true);
+
+    const ortakSorgu = `
+      id,
+      durum,
+      odeme_durumu,
+      merkez_notu,
+      hemsire_notu,
+      kapanis_notu,
+      olusturma_tarihi,
+      kapanis_tarihi,
+      plan_tarihi,
+      plan_saati,
+      plan_notu,
+      hastalar (
+        id,
+        hasta_adi,
+        telefon,
+        adres,
+        notlar
+      ),
+      hasta_hizmetleri (
+        id,
+        hizmet_adi,
+        hizmet_tipi,
+        adet,
+        birim_fiyat,
+        aciklama
+      ),
+      odemeler (
+        id,
+        odeme_durumu,
+        aciklama,
+        olusturma_tarihi
+      )
+    `;
+
+    const { data: aktifData, error: aktifHata } = await supabase
+      .from("hasta_kayitlari")
+      .select(ortakSorgu)
+      .eq("hemsire_id", aktifHemsireId)
+      .neq("durum", "Kapalı")
+      .order("plan_tarihi", { ascending: true, nullsFirst: false })
+      .order("plan_saati", { ascending: true, nullsFirst: false })
+      .order("olusturma_tarihi", { ascending: false });
+
+    const { data: kapaliData, error: kapaliHata } = await supabase
+      .from("hasta_kayitlari")
+      .select(ortakSorgu)
+      .eq("hemsire_id", aktifHemsireId)
+      .eq("durum", "Kapalı")
+      .order("kapanis_tarihi", { ascending: false });
+
+    const { data: hizmetData, error: hizmetHata } = await supabase
+      .from("hizmet_katalogu")
+      .select("*")
+      .eq("aktif", true)
+      .order("hizmet_adi", { ascending: true });
+
+    if (aktifHata) console.log("Hemşire aktif kayıt hatası:", aktifHata);
+    if (kapaliHata) console.log("Hemşire kapalı kayıt hatası:", kapaliHata);
+    if (hizmetHata) console.log("Hizmet listesi hatası:", hizmetHata);
+
+    setAktifKayitlar((aktifData as unknown as HastaKaydi[]) || []);
+    setKapatilanKayitlar((kapaliData as unknown as HastaKaydi[]) || []);
+    setHizmetler((hizmetData as Hizmet[]) || []);
+
+    setYukleniyor(false);
+  }
+
+  function hastaBilgisiGetir(kayit: HastaKaydi) {
+    if (Array.isArray(kayit.hastalar)) {
+      return kayit.hastalar[0] || null;
+    }
+
+    return kayit.hastalar || null;
+  }
+
+  function hastaAdiGetir(kayit: HastaKaydi) {
+    return hastaBilgisiGetir(kayit)?.hasta_adi || "Hasta adı yok";
   }
 
   function hastaTelefonGetir(kayit: HastaKaydi) {
-    const hasta = Array.isArray(kayit.hastalar)
-      ? kayit.hastalar[0]
-      : kayit.hastalar;
-
-    return hasta?.telefon || "Telefon yok";
+    return hastaBilgisiGetir(kayit)?.telefon || "Telefon yok";
   }
 
   function hastaAdresGetir(kayit: HastaKaydi) {
-    const hasta = Array.isArray(kayit.hastalar)
-      ? kayit.hastalar[0]
-      : kayit.hastalar;
-
-    return hasta?.adres || "Adres yok";
+    return hastaBilgisiGetir(kayit)?.adres || "Adres yok";
   }
 
   function tarihSaatFormatla(tarih: string | null) {
@@ -140,101 +214,16 @@ export default function HemsirePaneli() {
     });
   }
 
-  async function verileriGetir(hemsireId?: string) {
-    const aktifHemsireId = hemsireId || kullanici?.id;
+  function planBilgisiGetir(kayit: HastaKaydi) {
+    if (!kayit.plan_tarihi && !kayit.plan_saati) return "Plansız kayıt";
 
-    if (!aktifHemsireId) return;
+    const tarih = kayit.plan_tarihi
+      ? new Date(kayit.plan_tarihi).toLocaleDateString("tr-TR")
+      : "-";
 
-    setYukleniyor(true);
+    const saat = kayit.plan_saati ? String(kayit.plan_saati).slice(0, 5) : "-";
 
-    const { data: aktifData, error: aktifHata } = await supabase
-      .from("hasta_kayitlari")
-      .select(`
-        id,
-        durum,
-        odeme_durumu,
-        merkez_notu,
-        hemsire_notu,
-        kapanis_notu,
-        olusturma_tarihi,
-        kapanis_tarihi,
-        hastalar (
-          id,
-          hasta_adi,
-          telefon,
-          adres,
-          notlar
-        ),
-        hasta_hizmetleri (
-          id,
-          hizmet_adi,
-          hizmet_tipi,
-          adet,
-          birim_fiyat,
-          aciklama
-        ),
-        odemeler (
-          id,
-          odeme_durumu,
-          aciklama,
-          olusturma_tarihi
-        )
-      `)
-      .eq("hemsire_id", aktifHemsireId)
-      .neq("durum", "Kapalı")
-      .order("olusturma_tarihi", { ascending: false });
-
-    const { data: gecmisData, error: gecmisHata } = await supabase
-      .from("hasta_kayitlari")
-      .select(`
-        id,
-        durum,
-        odeme_durumu,
-        merkez_notu,
-        hemsire_notu,
-        kapanis_notu,
-        olusturma_tarihi,
-        kapanis_tarihi,
-        hastalar (
-          id,
-          hasta_adi,
-          telefon,
-          adres,
-          notlar
-        ),
-        hasta_hizmetleri (
-          id,
-          hizmet_adi,
-          hizmet_tipi,
-          adet,
-          birim_fiyat,
-          aciklama
-        ),
-        odemeler (
-          id,
-          odeme_durumu,
-          aciklama,
-          olusturma_tarihi
-        )
-      `)
-      .eq("hemsire_id", aktifHemsireId)
-      .eq("durum", "Kapalı")
-      .order("kapanis_tarihi", { ascending: false });
-
-    const { data: hizmetData, error: hizmetHata } = await supabase
-      .from("hizmet_katalogu")
-      .select("*")
-      .eq("aktif", true)
-      .order("hizmet_adi", { ascending: true });
-
-    if (aktifHata) console.log("Aktif kayıtlar çekilemedi:", aktifHata);
-    if (gecmisHata) console.log("Geçmiş kayıtlar çekilemedi:", gecmisHata);
-    if (hizmetHata) console.log("Hizmetler çekilemedi:", hizmetHata);
-
-    setHastaKayitlari((aktifData as HastaKaydi[]) || []);
-    setGecmisKayitlar((gecmisData as HastaKaydi[]) || []);
-    setHizmetler((hizmetData as Hizmet[]) || []);
-    setYukleniyor(false);
+    return `${tarih} / ${saat}`;
   }
 
   function toplamTutarHesapla(kayit: HastaKaydi) {
@@ -243,11 +232,33 @@ export default function HemsirePaneli() {
     }, 0);
   }
 
+  function modalAc(kayit: HastaKaydi) {
+    setSeciliKayit(kayit);
+    setHemsireNotu(kayit.hemsire_notu || "");
+    setOdemeDurumu(kayit.odeme_durumu || "Tamamı Alınmadı");
+    setOdemeAciklama("");
+    setSeciliHizmetId("");
+    setHizmetAdet("1");
+    setHizmetFiyat("");
+    setHizmetAciklama("");
+  }
+
+  function hizmetSec(hizmetId: string) {
+    setSeciliHizmetId(hizmetId);
+
+    const hizmet = hizmetler.find((item) => item.id === hizmetId);
+
+    if (hizmet) {
+      setHizmetFiyat(String(hizmet.fiyat));
+      setHizmetAciklama(hizmet.aciklama || "");
+    }
+  }
+
   async function hemsireHastaKaydiAc(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     if (!kullanici) {
-      alert("Kullanıcı bulunamadı. Tekrar giriş yapın.");
+      alert("Kullanıcı bulunamadı. Lütfen tekrar giriş yapın.");
       return;
     }
 
@@ -282,7 +293,7 @@ export default function HemsirePaneli() {
         durum: "Aktif",
         odeme_durumu: "Tamamı Alınmadı",
         merkez_notu: "",
-        hemsire_notu: hemsireNotuYeniKayit,
+        hemsire_notu: yeniKayitNotu,
         kapanis_notu: "",
       })
       .select()
@@ -297,34 +308,23 @@ export default function HemsirePaneli() {
     await supabase.from("bildirimler").insert({
       hasta_kaydi_id: kayit.id,
       baslik: "Hemşire yeni hasta kaydı açtı",
-      mesaj: `${kullanici.ad_soyad} tarafından ${hasta.hasta_adi} adına yeni kayıt açıldı.`,
+      mesaj: `${kullanici.ad_soyad}, ${hasta.hasta_adi} adına yeni hasta kaydı açtı.`,
       okundu: false,
     });
 
     setHastaAdi("");
     setHastaTelefon("");
     setHastaAdresi("");
-    setHemsireNotuYeniKayit("");
+    setYeniKayitNotu("");
 
     await verileriGetir(kullanici.id);
-    alert("Hasta kaydı oluşturuldu.");
-  }
-
-  function hizmetSec(hizmetId: string) {
-    setSeciliHizmetId(hizmetId);
-
-    const hizmet = hizmetler.find((h) => h.id === hizmetId);
-
-    if (hizmet) {
-      setHizmetFiyat(String(hizmet.fiyat));
-      setHizmetAciklama(hizmet.aciklama || "");
-    }
+    alert("Hasta kaydı oluşturuldu ve merkeze bildirildi.");
   }
 
   async function ekHizmetEkle() {
     if (!kullanici || !seciliKayit) return;
 
-    const hizmet = hizmetler.find((h) => h.id === seciliHizmetId);
+    const hizmet = hizmetler.find((item) => item.id === seciliHizmetId);
 
     if (!hizmet) {
       alert("Hizmet seçiniz.");
@@ -336,7 +336,7 @@ export default function HemsirePaneli() {
       return;
     }
 
-    const { error } = await supabase.from("hasta_hizmetleri").insert({
+    const { error: hizmetHata } = await supabase.from("hasta_hizmetleri").insert({
       hasta_kaydi_id: seciliKayit.id,
       hizmet_adi: hizmet.hizmet_adi,
       hizmet_tipi: "Hemşire Ek Hizmeti",
@@ -346,8 +346,8 @@ export default function HemsirePaneli() {
       aciklama: hizmetAciklama,
     });
 
-    if (error) {
-      console.log("Ek hizmet ekleme hatası:", error);
+    if (hizmetHata) {
+      console.log("Ek hizmet ekleme hatası:", hizmetHata);
       alert("Ek hizmet eklenemedi.");
       return;
     }
@@ -402,7 +402,7 @@ export default function HemsirePaneli() {
 
     if (kayitHata) {
       console.log("Kayıt güncelleme hatası:", kayitHata);
-      alert("Hasta kaydı güncellenemedi.");
+      alert("Kayıt güncellenemedi.");
       return;
     }
 
@@ -413,7 +413,6 @@ export default function HemsirePaneli() {
       okundu: false,
     });
 
-    setOdemeDurumu("Tamamı Alınmadı");
     setOdemeAciklama("");
 
     await verileriGetir(kullanici.id);
@@ -431,7 +430,7 @@ export default function HemsirePaneli() {
       .eq("id", seciliKayit.id);
 
     if (error) {
-      console.log("Hemşire notu hatası:", error);
+      console.log("Hemşire notu kaydetme hatası:", error);
       alert("Hemşire notu kaydedilemedi.");
       return;
     }
@@ -452,7 +451,7 @@ export default function HemsirePaneli() {
       .eq("id", seciliKayit.id);
 
     if (error) {
-      console.log("Merkez onayı gönderme hatası:", error);
+      console.log("Merkez onayına gönderme hatası:", error);
       alert("Merkez onayına gönderilemedi.");
       return;
     }
@@ -468,34 +467,22 @@ export default function HemsirePaneli() {
     alert("Kayıt merkez onayına gönderildi.");
   }
 
-  function modalAc(kayit: HastaKaydi) {
-    setSeciliKayit(kayit);
-    setHemsireNotu(kayit.hemsire_notu || "");
-    setOdemeDurumu(kayit.odeme_durumu || "Tamamı Alınmadı");
-  }
-
   function cikisYap() {
     localStorage.removeItem("kullanici");
     window.location.href = "/giris";
   }
 
+  if (yukleniyor) {
+    return <Yukleniyor />;
+  }
+
   return (
     <main className="min-h-screen kurumsal-arka-plan">
-      <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
-        <div className="max-w-7xl mx-auto px-5">
-          <h1 className="text-3xl lg:text-4xl font-black text-[#144a7b] mb-2">Hemşire Paneli</h1>
-          <p className="text-sm text-slate-600">Hemşire hasta kayıtları ve saha işlem ekranı</p>
-        </div>
-      </section>
-
       <KurumsalHeader
+        baslik="Geropital İş Talimatı"
+        aciklama="Hemşire hasta kayıtları ve saha işlem ekranı"
         linkler={[
-          { href: "/merkez-paneli", label: "Merkez Paneli" },
-          { href: "/gunluk-saha-plani", label: "G\u00fcnl\u00fck Saha Plan\u0131" },
-          { href: "/hizmet-yonetimi", label: "Hizmet Y\u00f6netimi" },
-          { href: "/bildirimler", label: "Bildirimler" },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kaapat\u0131lan Kay\u0131tlar" },
-          { href: "/hemsire-paneli", label: "Hem\u015fire Paneli" },
+          { href: "/hemsire-paneli", label: "Hemşire Paneli", vurgu: "ana" },
         ]}
         sagAlan={
           <button
@@ -508,7 +495,7 @@ export default function HemsirePaneli() {
       />
 
       <div className="max-w-7xl mx-auto p-5 grid lg:grid-cols-3 gap-6">
-        <section className="kurumsal-kart rounded-3xl p-6 h-fit">
+        <section className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit">
           <h2 className="text-xl font-black text-slate-900 mb-4">
             Yeni Hasta Kaydı Aç
           </h2>
@@ -536,13 +523,13 @@ export default function HemsirePaneli() {
             />
 
             <textarea
-              value={hemsireNotuYeniKayit}
-              onChange={(e) => setHemsireNotuYeniKayit(e.target.value)}
+              value={yeniKayitNotu}
+              onChange={(e) => setYeniKayitNotu(e.target.value)}
               className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-24"
               placeholder="Hemşire notu"
             />
 
-            <button className="w-full bg-blue-600 text-white rounded-xl py-3 font-black">
+            <button className="w-full kurumsal-buton rounded-xl py-3 font-black">
               Hasta Kaydı Aç
             </button>
           </form>
@@ -554,95 +541,110 @@ export default function HemsirePaneli() {
           </h2>
 
           <div className="space-y-4">
-            {hastaKayitlari.length === 0 && (
-              <p className="text-slate-500">Size atanmış aktif hasta kaydı bulunmuyor.</p>
+            {aktifKayitlar.length === 0 && (
+              <p className="text-slate-500">
+                Size atanmış aktif hasta kaydı bulunmuyor.
+              </p>
             )}
 
-            {hastaKayitlari.map((kayit) => {
-              const toplam = toplamTutarHesapla(kayit);
+            {aktifKayitlar.map((kayit) => (
+              <div
+                key={kayit.id}
+                className="border border-[#144a7b]/10 bg-white/80 rounded-2xl p-5 kurumsal-hover"
+              >
+                <div className="flex flex-col md:flex-row md:justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">
+                      {hastaAdiGetir(kayit)}
+                    </h3>
 
-              return (
-                <div key={kayit.id} className="border border-slate-200 rounded-2xl p-5">
-                  <div className="flex flex-col md:flex-row md:justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-black text-slate-900">
-                        {hastaAdiGetir(kayit) || "Hasta adı yok"}
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        {hastaTelefonGetir(kayit)}
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        {hastaAdresGetir(kayit)}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-2">
-                        Kayıt Açılış: {tarihSaatFormatla(kayit.olusturma_tarihi)}
-                      </p>
-                      {kayit.kapanis_tarihi && (
-                        <p className="text-xs text-slate-500">
-                          Kapanış: {tarihSaatFormatla(kayit.kapanis_tarihi)}
-                        </p>
-                      )}
-                    </div>
+                    <p className="text-sm text-slate-600">
+                      {hastaTelefonGetir(kayit)}
+                    </p>
 
-                    <div className="text-right">
-                      <p className="font-black text-slate-900">{kayit.durum}</p>
-                      <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
-                    </div>
+                    <p className="text-sm text-slate-600">
+                      {hastaAdresGetir(kayit)}
+                    </p>
+
+                    <p className="text-xs text-slate-500 mt-2">
+                      Plan: {planBilgisiGetir(kayit)}
+                    </p>
+
+                    <p className="text-xs text-slate-500">
+                      Kayıt Açılış: {tarihSaatFormatla(kayit.olusturma_tarihi)}
+                    </p>
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-3 mt-4">
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-xs text-slate-500">Toplam Tutar</p>
-                      <p className="font-black text-slate-900">
-                        {toplam.toLocaleString("tr-TR")} TL
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-xs text-slate-500">Ödeme Durumu</p>
-                      <p className="font-black text-slate-900">
-                        {kayit.odeme_durumu}
-                      </p>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-xs text-slate-500">Durum</p>
-                      <p className="font-black text-slate-900">{kayit.durum}</p>
-                    </div>
+                  <div className="text-right">
+                    <p className="font-black text-[#144a7b]">{kayit.durum}</p>
+                    <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
                   </div>
-
-                  <button
-                    onClick={() => modalAc(kayit)}
-                    className="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-black"
-                  >
-                    Kaydı Aç
-                  </button>
                 </div>
-              );
-            })}
+
+                <div className="grid md:grid-cols-3 gap-3 mt-4">
+                  <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
+                    <p className="text-xs text-slate-500">Toplam Tutar</p>
+                    <p className="font-black text-slate-900">
+                      {toplamTutarHesapla(kayit).toLocaleString("tr-TR")} TL
+                    </p>
+                  </div>
+
+                  <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
+                    <p className="text-xs text-slate-500">Ödeme Durumu</p>
+                    <p className="font-black text-slate-900">
+                      {kayit.odeme_durumu}
+                    </p>
+                  </div>
+
+                  <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
+                    <p className="text-xs text-slate-500">Durum</p>
+                    <p className="font-black text-slate-900">{kayit.durum}</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => modalAc(kayit)}
+                  className="w-full mt-4 kurumsal-buton py-3 rounded-xl font-black"
+                >
+                  Kaydı Aç
+                </button>
+              </div>
+            ))}
           </div>
         </section>
 
         <section className="lg:col-span-3 kurumsal-kart rounded-3xl p-6">
           <h2 className="text-xl font-black text-slate-900 mb-4">
-            Kapatılan Bana Ait Kayıtlar
+            Bana Ait Kapatılan Kayıtlar
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {gecmisKayitlar.length === 0 && (
-              <p className="text-slate-500">Kapatılmış kayıt bulunmuyor.</p>
-            )}
+          {kapatilanKayitlar.length === 0 && (
+            <p className="text-slate-500">Kapatılmış kayıt bulunmuyor.</p>
+          )}
 
-            {gecmisKayitlar.map((kayit) => (
-              <div key={kayit.id} className="border border-slate-200 rounded-2xl p-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {kapatilanKayitlar.map((kayit) => (
+              <div
+                key={kayit.id}
+                className="border border-[#144a7b]/10 bg-white/80 rounded-2xl p-4 kurumsal-hover"
+              >
                 <h3 className="font-black text-slate-900">
                   {hastaAdiGetir(kayit)}
                 </h3>
-                <p className="text-sm text-slate-600">{hastaTelefonGetir(kayit)}</p>
+
+                <p className="text-sm text-slate-600">
+                  {hastaTelefonGetir(kayit)}
+                </p>
+
                 <p className="text-sm text-slate-600">{kayit.odeme_durumu}</p>
+
+                <p className="text-xs text-slate-500 mt-2">
+                  Kapanış: {tarihSaatFormatla(kayit.kapanis_tarihi)}
+                </p>
+
                 <button
                   onClick={() => modalAc(kayit)}
-                  className="w-full mt-3 bg-slate-900 text-white rounded-xl py-2 font-bold"
+                  className="w-full mt-3 kurumsal-buton rounded-xl py-2 font-bold"
                 >
                   Geçmiş Kaydı Aç
                 </button>
@@ -654,17 +656,23 @@ export default function HemsirePaneli() {
 
       {seciliKayit && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="kurumsal-kart rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
             <div className="flex justify-between gap-4 mb-5">
               <div>
-                <h2 className="text-2xl font-black text-slate-900">
+                <h2 className="text-2xl font-black text-[#144a7b]">
                   {hastaAdiGetir(seciliKayit)}
                 </h2>
+
                 <p className="text-sm text-slate-600">
                   {hastaTelefonGetir(seciliKayit)}
                 </p>
+
                 <p className="text-sm text-slate-600">
                   {hastaAdresGetir(seciliKayit)}
+                </p>
+
+                <p className="text-xs text-slate-500 mt-2">
+                  Plan: {planBilgisiGetir(seciliKayit)}
                 </p>
               </div>
 
@@ -700,16 +708,25 @@ export default function HemsirePaneli() {
               )}
 
               {(seciliKayit.hasta_hizmetleri || []).map((hizmet) => (
-                <div key={hizmet.id} className="border border-slate-200 rounded-xl p-3 flex justify-between gap-3">
+                <div
+                  key={hizmet.id}
+                  className="border border-slate-200 rounded-xl p-3 flex justify-between gap-3"
+                >
                   <div>
-                    <p className="font-black text-slate-900">{hizmet.hizmet_adi}</p>
+                    <p className="font-black text-slate-900">
+                      {hizmet.hizmet_adi}
+                    </p>
+
                     <p className="text-sm text-slate-500">
                       {hizmet.hizmet_tipi} • {hizmet.aciklama}
                     </p>
                   </div>
 
                   <p className="font-black text-slate-900">
-                    {(Number(hizmet.adet) * Number(hizmet.birim_fiyat)).toLocaleString("tr-TR")} TL
+                    {(
+                      Number(hizmet.adet) * Number(hizmet.birim_fiyat)
+                    ).toLocaleString("tr-TR")}{" "}
+                    TL
                   </p>
                 </div>
               ))}
@@ -731,7 +748,8 @@ export default function HemsirePaneli() {
                       <option value="">Hizmet seçiniz</option>
                       {hizmetler.map((hizmet) => (
                         <option key={hizmet.id} value={hizmet.id}>
-                          {hizmet.hizmet_adi} - {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                          {hizmet.hizmet_adi} -{" "}
+                          {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
                         </option>
                       ))}
                     </select>
@@ -760,7 +778,7 @@ export default function HemsirePaneli() {
 
                   <button
                     onClick={ekHizmetEkle}
-                    className="mt-3 bg-slate-900 text-white px-5 py-3 rounded-xl font-black"
+                    className="mt-3 kurumsal-buton px-5 py-3 rounded-xl font-black"
                   >
                     Ek Hizmeti Merkeze Bildir
                   </button>
@@ -792,14 +810,16 @@ export default function HemsirePaneli() {
 
                   <button
                     onClick={odemeDurumuBildir}
-                    className="mt-3 bg-emerald-600 text-white px-5 py-3 rounded-xl font-black"
+                    className="mt-3 bg-emerald-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-emerald-700"
                   >
                     Ödeme Durumunu Merkeze Bildir
                   </button>
                 </section>
 
                 <section className="bg-blue-50 rounded-2xl p-4 mb-5">
-                  <h3 className="font-black text-slate-900 mb-3">Hemşire Notu</h3>
+                  <h3 className="font-black text-slate-900 mb-3">
+                    Hemşire Notu
+                  </h3>
 
                   <textarea
                     value={hemsireNotu}
@@ -811,14 +831,14 @@ export default function HemsirePaneli() {
                   <div className="flex flex-wrap gap-2 mt-3">
                     <button
                       onClick={hemsireNotuKaydet}
-                      className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black"
+                      className="kurumsal-buton px-5 py-3 rounded-xl font-black"
                     >
                       Notu Kaydet
                     </button>
 
                     <button
                       onClick={merkezeOnayaGonder}
-                      className="bg-amber-600 text-white px-5 py-3 rounded-xl font-black"
+                      className="bg-amber-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-amber-700"
                     >
                       Merkez Onayına Gönder
                     </button>
@@ -831,4 +851,4 @@ export default function HemsirePaneli() {
       )}
     </main>
   );
-} 
+}
