@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
-import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 
 type Kullanici = {
   id: string;
@@ -18,6 +18,12 @@ type Hizmet = {
   aktif: boolean;
 };
 
+type HastaBilgisi = {
+  hasta_adi: string;
+  telefon: string | null;
+  adres: string | null;
+};
+
 type Kayit = {
   id: string;
   durum: string;
@@ -26,11 +32,7 @@ type Kayit = {
   plan_saati: string | null;
   plan_notu: string | null;
   olusturma_tarihi: string;
-  hastalar: {
-    hasta_adi: string;
-    telefon: string | null;
-    adres: string | null;
-  } | null;
+  hastalar: HastaBilgisi | HastaBilgisi[] | null;
   hasta_hizmetleri: {
     id: string;
     hizmet_adi: string;
@@ -43,6 +45,7 @@ const saatler = Array.from({ length: 31 }, (_, i) => {
   const toplamDakika = 7 * 60 + i * 30;
   const saat = Math.floor(toplamDakika / 60);
   const dakika = toplamDakika % 60;
+
   return `${String(saat).padStart(2, "0")}:${String(dakika).padStart(2, "0")}`;
 });
 
@@ -67,17 +70,14 @@ export default function GunlukSahaPlani() {
   const [durumFiltre, setDurumFiltre] = useState("");
   const [siralama, setSiralama] = useState("saat");
 
-  function cikisYap() {
-    localStorage.removeItem("kullanici");
-    window.location.href = "/giris";
-  }
-
   useEffect(() => {
     verileriGetir();
   }, [tarih]);
 
   async function verileriGetir() {
-    const { data: kayitData } = await supabase
+    setYukleniyor(true);
+
+    const { data: kayitData, error: kayitHata } = await supabase
       .from("hasta_kayitlari")
       .select(`
         id,
@@ -103,23 +103,48 @@ export default function GunlukSahaPlani() {
       .neq("durum", "Kapalı")
       .order("plan_saati", { ascending: true });
 
-    const { data: hemsireData } = await supabase
+    const { data: hemsireData, error: hemsireHata } = await supabase
       .from("kullanicilar")
       .select("id, ad_soyad, rol, aktif")
       .eq("rol", "hemsire")
       .eq("aktif", true)
-      .order("ad_soyad");
+      .order("ad_soyad", { ascending: true });
 
-    const { data: hizmetData } = await supabase
+    const { data: hizmetData, error: hizmetHata } = await supabase
       .from("hizmet_katalogu")
       .select("id, hizmet_adi, fiyat, aktif")
       .eq("aktif", true)
-      .order("hizmet_adi");
+      .order("hizmet_adi", { ascending: true });
 
-    setKayitlar((kayitData as Kayit[]) || []);
+    if (kayitHata) console.log("Günlük kayıtlar çekilemedi:", kayitHata);
+    if (hemsireHata) console.log("Hemşireler çekilemedi:", hemsireHata);
+    if (hizmetHata) console.log("Hizmetler çekilemedi:", hizmetHata);
+
+    setKayitlar((kayitData as unknown as Kayit[]) || []);
     setHemsireler((hemsireData as Kullanici[]) || []);
     setHizmetler((hizmetData as Hizmet[]) || []);
+
     setYukleniyor(false);
+  }
+
+  function hastaBilgisiGetir(kayit: Kayit) {
+    if (Array.isArray(kayit.hastalar)) {
+      return kayit.hastalar[0] || null;
+    }
+
+    return kayit.hastalar || null;
+  }
+
+  function hastaAdiGetir(kayit: Kayit) {
+    return hastaBilgisiGetir(kayit)?.hasta_adi || "";
+  }
+
+  function hastaTelefonGetir(kayit: Kayit) {
+    return hastaBilgisiGetir(kayit)?.telefon || "";
+  }
+
+  function hastaAdresGetir(kayit: Kayit) {
+    return hastaBilgisiGetir(kayit)?.adres || "";
   }
 
   function toplamHesapla(kayit: Kayit) {
@@ -128,19 +153,24 @@ export default function GunlukSahaPlani() {
     }, 0);
   }
 
+  function saatFormatla(saat: string | null) {
+    if (!saat) return "-";
+    return String(saat).slice(0, 5);
+  }
+
   const filtreliKayitlar = useMemo(() => {
     let liste = [...kayitlar];
 
     if (arama.trim()) {
-      liste = liste.filter((k) =>
-        `${k.hastalar?.hasta_adi || ""} ${k.hastalar?.telefon || ""} ${k.hastalar?.adres || ""}`
+      liste = liste.filter((kayit) =>
+        `${hastaAdiGetir(kayit)} ${hastaTelefonGetir(kayit)} ${hastaAdresGetir(kayit)}`
           .toLowerCase()
           .includes(arama.toLowerCase())
       );
     }
 
     if (durumFiltre) {
-      liste = liste.filter((k) => k.durum === durumFiltre);
+      liste = liste.filter((kayit) => kayit.durum === durumFiltre);
     }
 
     if (siralama === "fiyat-artan") {
@@ -152,13 +182,13 @@ export default function GunlukSahaPlani() {
     }
 
     if (siralama === "hasta") {
-      liste.sort((a, b) =>
-        (a.hastalar?.hasta_adi || "").localeCompare(b.hastalar?.hasta_adi || "")
-      );
+      liste.sort((a, b) => hastaAdiGetir(a).localeCompare(hastaAdiGetir(b)));
     }
 
     if (siralama === "saat") {
-      liste.sort((a, b) => String(a.plan_saati).localeCompare(String(b.plan_saati)));
+      liste.sort((a, b) =>
+        String(a.plan_saati || "").localeCompare(String(b.plan_saati || ""))
+      );
     }
 
     return liste;
@@ -167,8 +197,18 @@ export default function GunlukSahaPlani() {
   async function kayitOlustur(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!hastaAdi || !hemsireId || !planSaati) {
-      alert("Hasta adı, hemşire ve saat zorunludur.");
+    if (!hastaAdi.trim()) {
+      alert("Hasta adı zorunludur.");
+      return;
+    }
+
+    if (!hemsireId) {
+      alert("Hemşire seçiniz.");
+      return;
+    }
+
+    if (!planSaati) {
+      alert("Saat seçiniz.");
       return;
     }
 
@@ -178,11 +218,13 @@ export default function GunlukSahaPlani() {
         hasta_adi: hastaAdi,
         telefon,
         adres,
+        notlar: "",
       })
       .select()
       .single();
 
     if (hastaHata || !hasta) {
+      console.log("Hasta oluşturma hatası:", hastaHata);
       alert("Hasta oluşturulamadı.");
       return;
     }
@@ -197,19 +239,23 @@ export default function GunlukSahaPlani() {
         plan_tarihi: tarih,
         plan_saati: planSaati,
         plan_notu: planNotu,
+        merkez_notu: planNotu,
+        hemsire_notu: "",
+        kapanis_notu: "",
       })
       .select()
       .single();
 
     if (kayitHata || !kayit) {
+      console.log("Hasta kaydı oluşturma hatası:", kayitHata);
       alert("Hasta kaydı oluşturulamadı.");
       return;
     }
 
-    const hizmet = hizmetler.find((h) => h.id === hizmetId);
+    const hizmet = hizmetler.find((hizmet) => hizmet.id === hizmetId);
 
     if (hizmet) {
-      await supabase.from("hasta_hizmetleri").insert({
+      const { error: hizmetHata } = await supabase.from("hasta_hizmetleri").insert({
         hasta_kaydi_id: kayit.id,
         hizmet_adi: hizmet.hizmet_adi,
         hizmet_tipi: "Merkez Plan Hizmeti",
@@ -217,6 +263,10 @@ export default function GunlukSahaPlani() {
         birim_fiyat: hizmet.fiyat,
         aciklama: "Günlük saha planından eklendi.",
       });
+
+      if (hizmetHata) {
+        console.log("Hizmet ekleme hatası:", hizmetHata);
+      }
     }
 
     setHastaAdi("");
@@ -228,92 +278,131 @@ export default function GunlukSahaPlani() {
     setHizmetId("");
 
     await verileriGetir();
+    alert("Planlı hasta kaydı oluşturuldu.");
+  }
+
+  if (yukleniyor) {
+    return <Yukleniyor />;
   }
 
   return (
-    <main className="min-h-screen kurumsal-arka-plan">
-      <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
-        <div className="max-w-7xl mx-auto px-5">
-          <h1 className="text-3xl lg:text-4xl font-black text-[#144a7b] mb-2">Günlük Saha Planı</h1>
-          <p className="text-sm text-slate-600">Hemşirelerin günlük ziyaret takvimi ve saha işlemleri</p>
-        </div>
-      </section>
+    <main className="min-h-screen kurumsal-arka-plan p-5">
+      <div className="max-w-7xl mx-auto">
+        <header className="kurumsal-kart rounded-3xl p-6 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo-geropital.png"
+              className="h-14 w-auto object-contain"
+              alt="Geropital"
+            />
 
-      <KurumsalHeader
-        linkler={[
-          { href: "/merkez-paneli", label: "Merkez Paneli" },
-          { href: "/gunluk-saha-plani", label: "G\u00fcnl\u00fck Saha Plan\u0131" },
-          { href: "/hizmet-yonetimi", label: "Hizmet Y\u00f6netimi" },
-          { href: "/bildirimler", label: "Bildirimler" },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kaapat\u0131lan Kay\u0131tlar" },
-        ]}
-        sagAlan={
-          <button
-            onClick={cikisYap}
-            className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold transition hover:bg-slate-800"
-          >
-            Çıkış
-          </button>
-        }
-      />
+            <div>
+              <h1 className="text-3xl font-black text-[#144a7b]">
+                Günlük Saha Planı
+              </h1>
+              <p className="text-slate-600">
+                07:00 - 22:00 arası yarım saatlik saha planı.
+              </p>
+            </div>
+          </div>
 
-      <div className="max-w-7xl mx-auto p-5">
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/merkez-paneli"
+              className="kurumsal-buton px-4 py-2 rounded-xl font-bold"
+            >
+              Merkez Paneli
+            </a>
+
+            <a
+              href="/hizmet-yonetimi"
+              className="kurumsal-acik-buton px-4 py-2 rounded-xl font-bold"
+            >
+              Hizmet Yönetimi
+            </a>
+
+            <a
+              href="/bildirimler"
+              className="kurumsal-acik-buton px-4 py-2 rounded-xl font-bold"
+            >
+              Bildirimler
+            </a>
+
+            <a
+              href="/kapatilan-hasta-kayitlari"
+              className="kurumsal-acik-buton px-4 py-2 rounded-xl font-bold"
+            >
+              Kapatılan Kayıtlar
+            </a>
+          </div>
+        </header>
+
         <section className="grid lg:grid-cols-3 gap-6">
-          <form onSubmit={kayitOlustur} className="kurumsal-kart rounded-3xl p-6 h-fit space-y-3">
-            <h2 className="text-xl font-black text-slate-900">Planlı Hasta Kaydı Aç</h2>
+          <form
+            onSubmit={kayitOlustur}
+            className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit space-y-3"
+          >
+            <h2 className="text-xl font-black text-slate-900">
+              Planlı Hasta Kaydı Aç
+            </h2>
 
             <input
               value={hastaAdi}
               onChange={(e) => setHastaAdi(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
               placeholder="Hasta adı soyadı"
             />
 
             <input
               value={telefon}
               onChange={(e) => setTelefon(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
               placeholder="Telefon"
             />
 
             <textarea
               value={adres}
               onChange={(e) => setAdres(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 min-h-20"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-20"
               placeholder="Adres"
             />
 
             <select
               value={hemsireId}
               onChange={(e) => setHemsireId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             >
               <option value="">Hemşire seçiniz</option>
-              {hemsireler.map((h) => (
-                <option key={h.id} value={h.id}>{h.ad_soyad}</option>
+              {hemsireler.map((hemsire) => (
+                <option key={hemsire.id} value={hemsire.id}>
+                  {hemsire.ad_soyad}
+                </option>
               ))}
             </select>
 
             <select
               value={planSaati}
               onChange={(e) => setPlanSaati(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             >
               <option value="">Saat seçiniz</option>
               {saatler.map((saat) => (
-                <option key={saat} value={saat}>{saat}</option>
+                <option key={saat} value={saat}>
+                  {saat}
+                </option>
               ))}
             </select>
 
             <select
               value={hizmetId}
               onChange={(e) => setHizmetId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             >
               <option value="">Hizmet seçiniz</option>
-              {hizmetler.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.hizmet_adi} - {Number(h.fiyat).toLocaleString("tr-TR")} TL
+              {hizmetler.map((hizmet) => (
+                <option key={hizmet.id} value={hizmet.id}>
+                  {hizmet.hizmet_adi} -{" "}
+                  {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
                 </option>
               ))}
             </select>
@@ -321,11 +410,11 @@ export default function GunlukSahaPlani() {
             <textarea
               value={planNotu}
               onChange={(e) => setPlanNotu(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 min-h-20"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-20"
               placeholder="Plan notu"
             />
 
-            <button className="w-full bg-[#144a7b] text-white rounded-xl py-3 font-black">
+            <button className="w-full kurumsal-buton rounded-xl py-3 font-black">
               Planlı Kaydı Oluştur
             </button>
           </form>
@@ -333,8 +422,12 @@ export default function GunlukSahaPlani() {
           <section className="lg:col-span-2 kurumsal-kart rounded-3xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <div>
-                <h2 className="text-xl font-black text-slate-900">Günlük Görünüm</h2>
-                <p className="text-sm text-slate-500">Takvim veya liste görünümü.</p>
+                <h2 className="text-xl font-black text-slate-900">
+                  Günlük Görünüm
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Takvim veya liste görünümü.
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -342,22 +435,28 @@ export default function GunlukSahaPlani() {
                   type="date"
                   value={tarih}
                   onChange={(e) => setTarih(e.target.value)}
-                  className="border border-slate-300 rounded-xl px-4 py-2"
+                  className="border border-slate-300 rounded-xl px-4 py-2 text-slate-900"
                 />
 
                 <button
+                  type="button"
                   onClick={() => setGorunum("takvim")}
-                  className={`px-4 py-2 rounded-xl font-bold ${
-                    gorunum === "takvim" ? "bg-[#144a7b] text-white" : "bg-slate-100"
+                  className={`px-4 py-2 rounded-xl font-bold transition ${
+                    gorunum === "takvim"
+                      ? "kurumsal-buton"
+                      : "kurumsal-acik-buton"
                   }`}
                 >
                   Takvim
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => setGorunum("liste")}
-                  className={`px-4 py-2 rounded-xl font-bold ${
-                    gorunum === "liste" ? "bg-[#144a7b] text-white" : "bg-slate-100"
+                  className={`px-4 py-2 rounded-xl font-bold transition ${
+                    gorunum === "liste"
+                      ? "kurumsal-buton"
+                      : "kurumsal-acik-buton"
                   }`}
                 >
                   Liste
@@ -365,18 +464,18 @@ export default function GunlukSahaPlani() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-4 gap-3 mb-5">
+            <div className="grid md:grid-cols-3 gap-3 mb-5">
               <input
                 value={arama}
                 onChange={(e) => setArama(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-2"
+                className="border border-slate-300 rounded-xl px-4 py-2 text-slate-900"
                 placeholder="Hasta / telefon / adres ara"
               />
 
               <select
                 value={durumFiltre}
                 onChange={(e) => setDurumFiltre(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-2"
+                className="border border-slate-300 rounded-xl px-4 py-2 text-slate-900"
               >
                 <option value="">Tüm durumlar</option>
                 <option>Aktif</option>
@@ -386,7 +485,7 @@ export default function GunlukSahaPlani() {
               <select
                 value={siralama}
                 onChange={(e) => setSiralama(e.target.value)}
-                className="border border-slate-300 rounded-xl px-4 py-2"
+                className="border border-slate-300 rounded-xl px-4 py-2 text-slate-900"
               >
                 <option value="saat">Saate göre</option>
                 <option value="hasta">Hasta adına göre</option>
@@ -398,8 +497,8 @@ export default function GunlukSahaPlani() {
             {gorunum === "takvim" && (
               <div className="space-y-2">
                 {saatler.map((saat) => {
-                  const saatKayitlari = filtreliKayitlar.filter((k) =>
-                    String(k.plan_saati || "").startsWith(saat)
+                  const saatKayitlari = filtreliKayitlar.filter((kayit) =>
+                    saatFormatla(kayit.plan_saati).startsWith(saat)
                   );
 
                   return (
@@ -408,21 +507,31 @@ export default function GunlukSahaPlani() {
                         {saat}
                       </div>
 
-                      <div className="bg-white/80 border border-slate-200 rounded-xl p-3 min-h-16">
+                      <div className="bg-white/80 border border-[#144a7b]/10 rounded-xl p-3 min-h-16">
                         {saatKayitlari.length === 0 ? (
                           <p className="text-sm text-slate-400">Boş</p>
                         ) : (
                           <div className="space-y-2">
-                            {saatKayitlari.map((k) => (
-                              <div key={k.id} className="bg-slate-50 rounded-xl p-3">
+                            {saatKayitlari.map((kayit) => (
+                              <div
+                                key={kayit.id}
+                                className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3 kurumsal-hover"
+                              >
                                 <p className="font-black text-slate-900">
-                                  {k.hastalar?.hasta_adi}
+                                  {hastaAdiGetir(kayit)}
                                 </p>
+
                                 <p className="text-sm text-slate-600">
-                                  {k.hastalar?.adres}
+                                  {hastaAdresGetir(kayit)}
                                 </p>
-                                <p className="text-sm font-bold text-[#144a7b]">
-                                  {toplamHesapla(k).toLocaleString("tr-TR")} TL • {k.odeme_durumu}
+
+                                <p className="text-sm font-bold text-[#144a7b] mt-1">
+                                  {toplamHesapla(kayit).toLocaleString("tr-TR")} TL
+                                  {" "}• {kayit.odeme_durumu}
+                                </p>
+
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {kayit.durum}
                                 </p>
                               </div>
                             ))}
@@ -439,9 +548,10 @@ export default function GunlukSahaPlani() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-100 text-left">
+                    <tr className="bg-[#e8f1fb] text-left text-[#144a7b]">
                       <th className="p-3">Saat</th>
                       <th className="p-3">Hasta</th>
+                      <th className="p-3">Telefon</th>
                       <th className="p-3">Adres</th>
                       <th className="p-3">Durum</th>
                       <th className="p-3">Ödeme</th>
@@ -450,15 +560,21 @@ export default function GunlukSahaPlani() {
                   </thead>
 
                   <tbody>
-                    {filtreliKayitlar.map((k) => (
-                      <tr key={k.id} className="border-b border-slate-200">
-                        <td className="p-3 font-bold">{String(k.plan_saati).slice(0, 5)}</td>
-                        <td className="p-3">{k.hastalar?.hasta_adi}</td>
-                        <td className="p-3">{k.hastalar?.adres}</td>
-                        <td className="p-3">{k.durum}</td>
-                        <td className="p-3">{k.odeme_durumu}</td>
+                    {filtreliKayitlar.map((kayit) => (
+                      <tr
+                        key={kayit.id}
+                        className="border-b border-slate-200 hover:bg-[#f4f8fc]"
+                      >
+                        <td className="p-3 font-bold">
+                          {saatFormatla(kayit.plan_saati)}
+                        </td>
+                        <td className="p-3">{hastaAdiGetir(kayit)}</td>
+                        <td className="p-3">{hastaTelefonGetir(kayit)}</td>
+                        <td className="p-3">{hastaAdresGetir(kayit)}</td>
+                        <td className="p-3">{kayit.durum}</td>
+                        <td className="p-3">{kayit.odeme_durumu}</td>
                         <td className="p-3 text-right font-black">
-                          {toplamHesapla(k).toLocaleString("tr-TR")} TL
+                          {toplamHesapla(kayit).toLocaleString("tr-TR")} TL
                         </td>
                       </tr>
                     ))}
