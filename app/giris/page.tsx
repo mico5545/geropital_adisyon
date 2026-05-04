@@ -33,7 +33,17 @@ export default function GirisSayfasi() {
       return;
     }
 
-    localStorage.setItem("kullanici", JSON.stringify(data));
+    // iOS private mode'da localStorage erişim yok - try/catch ile handle et
+    try {
+      localStorage.setItem("kullanici", JSON.stringify(data));
+    } catch (e) {
+      // localStorage kullanılamıyor, sessionStorage'a kaydet
+      try {
+        sessionStorage.setItem("kullanici", JSON.stringify(data));
+      } catch (e2) {
+        console.warn("localStorage ve sessionStorage kullanılamıyor");
+      }
+    }
 
     if (data.rol === "merkez") {
       router.push("/merkez-paneli");

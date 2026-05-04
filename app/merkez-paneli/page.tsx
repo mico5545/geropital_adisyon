@@ -103,7 +103,11 @@ export default function MerkezPaneli() {
   const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
-    const kayitliKullanici = localStorage.getItem("kullanici");
+    // localStorage yoksa sessionStorage'dan çek (iOS private mode uyumluluğu)
+    let kayitliKullanici = localStorage.getItem("kullanici");
+    if (!kayitliKullanici) {
+      kayitliKullanici = sessionStorage.getItem("kullanici");
+    }
 
     if (!kayitliKullanici) {
       window.location.href = "/giris";
@@ -114,7 +118,11 @@ export default function MerkezPaneli() {
 
     setKullanici(aktifKullanici);
 
-    const kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
+    // Ses durumu kontrol et
+    let kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
+    if (!kayitliSesDurumu) {
+      kayitliSesDurumu = sessionStorage.getItem("bildirim_sesi_aktif");
+    }
 
     if (kayitliSesDurumu === "true") {
       sesAktifRef.current = true;
@@ -241,7 +249,17 @@ export default function MerkezPaneli() {
 
     sesAktifRef.current = yeniDurum;
     setSesAktif(yeniDurum);
-    localStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
+
+    // iOS private mode uyumluluğu - localStorage ve sessionStorage'a kaydet
+    try {
+      localStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
+    } catch (e) {
+      try {
+        sessionStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
+      } catch (e2) {
+        console.warn("Ses durumu kaydedilemedi");
+      }
+    }
 
     if (yeniDurum) {
       bildirimSesiCal();

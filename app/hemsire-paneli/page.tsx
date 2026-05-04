@@ -89,7 +89,11 @@ export default function HemsirePaneli() {
   const [hemsireNotu, setHemsireNotu] = useState("");
 
   useEffect(() => {
-    const kayitliKullanici = localStorage.getItem("kullanici");
+    // localStorage yoksa sessionStorage'dan çek (iOS private mode uyumluluğu)
+    let kayitliKullanici = localStorage.getItem("kullanici");
+    if (!kayitliKullanici) {
+      kayitliKullanici = sessionStorage.getItem("kullanici");
+    }
 
     if (!kayitliKullanici) {
       window.location.href = "/giris";
@@ -655,19 +659,19 @@ export default function HemsirePaneli() {
       </div>
 
       {seciliKayit && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-y-auto p-6">
-            <div className="flex justify-between gap-4 mb-5">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6">
+            <div className="flex justify-between gap-2 sm:gap-4 mb-3 sm:mb-5">
               <div>
-                <h2 className="text-2xl font-black text-[#144a7b]">
+                <h2 className="text-xl sm:text-2xl font-black text-[#144a7b]">
                   {hastaAdiGetir(seciliKayit)}
                 </h2>
 
-                <p className="text-sm text-slate-600">
+                <p className="text-xs sm:text-sm text-slate-600">
                   {hastaTelefonGetir(seciliKayit)}
                 </p>
 
-                <p className="text-sm text-slate-600">
+                <p className="text-xs sm:text-sm text-slate-600">
                   {hastaAdresGetir(seciliKayit)}
                 </p>
 
@@ -678,30 +682,30 @@ export default function HemsirePaneli() {
 
               <button
                 onClick={() => setSeciliKayit(null)}
-                className="bg-slate-100 px-4 py-2 rounded-xl font-black"
+                className="bg-slate-100 px-3 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl font-black text-sm flex-shrink-0"
               >
                 Kapat
               </button>
             </div>
 
-            <section className="grid sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-5">
-              <div className="bg-blue-50 rounded-2xl p-4">
-                <p className="font-black text-blue-900">Merkez Notu</p>
-                <p className="text-blue-900 mt-1">
+            <section className="grid sm:grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-5">
+              <div className="bg-blue-50 rounded-2xl p-3 sm:p-4">
+                <p className="font-black text-blue-900 text-sm sm:text-base">Merkez Notu</p>
+                <p className="text-blue-900 mt-1 text-xs sm:text-sm">
                   {seciliKayit.merkez_notu || "Merkez notu yok."}
                 </p>
               </div>
 
-              <div className="bg-amber-50 rounded-2xl p-4">
-                <p className="font-black text-amber-900">Hemşire Notu</p>
-                <p className="text-amber-900 mt-1">
+              <div className="bg-amber-50 rounded-2xl p-3 sm:p-4">
+                <p className="font-black text-amber-900 text-sm sm:text-base">Hemşire Notu</p>
+                <p className="text-amber-900 mt-1 text-xs sm:text-sm">
                   {seciliKayit.hemsire_notu || "Hemşire notu yok."}
                 </p>
               </div>
             </section>
 
-            <section className="space-y-3 mb-5">
-              <h3 className="font-black text-slate-900">Hizmetler</h3>
+            <section className="space-y-2 sm:space-y-3 mb-3 sm:mb-5">
+              <h3 className="font-black text-slate-900 text-sm sm:text-base">Hizmetler</h3>
 
               {(seciliKayit.hasta_hizmetleri || []).length === 0 && (
                 <p className="text-slate-500">Henüz hizmet eklenmedi.</p>
@@ -722,7 +726,7 @@ export default function HemsirePaneli() {
                     </p>
                   </div>
 
-                  <p className="font-black text-slate-900">
+                  <p className="font-black text-slate-900 text-xs sm:text-sm flex-shrink-0">
                     {(
                       Number(hizmet.adet) * Number(hizmet.birim_fiyat)
                     ).toLocaleString("tr-TR")}{" "}
@@ -734,8 +738,8 @@ export default function HemsirePaneli() {
 
             {seciliKayit.durum !== "Kapalı" && (
               <>
-                <section className="bg-slate-50 rounded-2xl p-4 mb-5">
-                  <h3 className="font-black text-slate-900 mb-3">
+                <section className="bg-slate-50 rounded-2xl p-3 sm:p-4 mb-3 sm:mb-5">
+                  <h3 className="font-black text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base">
                     Sahada Ek Hizmet Ekle
                   </h3>
 
@@ -743,7 +747,7 @@ export default function HemsirePaneli() {
                     <select
                       value={seciliHizmetId}
                       onChange={(e) => hizmetSec(e.target.value)}
-                      className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900 md:col-span-2"
+                      className="border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm md:col-span-2"
                     >
                       <option value="">Hizmet seçiniz</option>
                       {hizmetler.map((hizmet) => (
@@ -757,14 +761,14 @@ export default function HemsirePaneli() {
                     <input
                       value={hizmetAdet}
                       onChange={(e) => setHizmetAdet(e.target.value)}
-                      className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                      className="border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm"
                       placeholder="Adet"
                     />
 
                     <input
                       value={hizmetFiyat}
                       onChange={(e) => setHizmetFiyat(e.target.value)}
-                      className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                      className="border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm"
                       placeholder="Fiyat"
                     />
                   </div>
@@ -772,20 +776,20 @@ export default function HemsirePaneli() {
                   <textarea
                     value={hizmetAciklama}
                     onChange={(e) => setHizmetAciklama(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 mt-3"
+                    className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm mt-2 sm:mt-3"
                     placeholder="Ek hizmet açıklaması"
                   />
 
                   <button
                     onClick={ekHizmetEkle}
-                    className="mt-3 kurumsal-buton px-5 py-3 rounded-xl font-black"
+                    className="mt-2 sm:mt-3 kurumsal-buton px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm w-full sm:w-auto"
                   >
                     Ek Hizmeti Merkeze Bildir
                   </button>
                 </section>
 
-                <section className="bg-emerald-50 rounded-2xl p-4 mb-5">
-                  <h3 className="font-black text-slate-900 mb-3">
+                <section className="bg-emerald-50 rounded-2xl p-3 sm:p-4 mb-3 sm:mb-5">
+                  <h3 className="font-black text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base">
                     Ödeme Durumu Bildir
                   </h3>
 
@@ -793,7 +797,7 @@ export default function HemsirePaneli() {
                     <select
                       value={odemeDurumu}
                       onChange={(e) => setOdemeDurumu(e.target.value)}
-                      className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                      className="border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm"
                     >
                       {odemeSecenekleri.map((secenek) => (
                         <option key={secenek}>{secenek}</option>
@@ -803,42 +807,42 @@ export default function HemsirePaneli() {
                     <input
                       value={odemeAciklama}
                       onChange={(e) => setOdemeAciklama(e.target.value)}
-                      className="border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                      className="border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-xs sm:text-sm"
                       placeholder="Ödeme açıklaması"
                     />
                   </div>
 
                   <button
                     onClick={odemeDurumuBildir}
-                    className="mt-3 bg-emerald-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-emerald-700"
+                    className="mt-2 sm:mt-3 bg-emerald-600 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm transition hover:bg-emerald-700 w-full sm:w-auto"
                   >
                     Ödeme Durumunu Merkeze Bildir
                   </button>
                 </section>
 
-                <section className="bg-blue-50 rounded-2xl p-4 mb-5">
-                  <h3 className="font-black text-slate-900 mb-3">
+                <section className="bg-blue-50 rounded-2xl p-3 sm:p-4">
+                  <h3 className="font-black text-slate-900 mb-2 sm:mb-3 text-sm sm:text-base">
                     Hemşire Notu
                   </h3>
 
                   <textarea
                     value={hemsireNotu}
                     onChange={(e) => setHemsireNotu(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-28"
+                    className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 min-h-28 text-xs sm:text-sm"
                     placeholder="Hasta yanında görülen durum, işlem notu..."
                   />
 
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
                     <button
                       onClick={hemsireNotuKaydet}
-                      className="kurumsal-buton px-5 py-3 rounded-xl font-black"
+                      className="kurumsal-buton px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm flex-1 sm:flex-initial"
                     >
                       Notu Kaydet
                     </button>
 
                     <button
                       onClick={merkezeOnayaGonder}
-                      className="bg-amber-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-amber-700"
+                      className="bg-amber-600 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm transition hover:bg-amber-700 flex-1 sm:flex-initial"
                     >
                       Merkez Onayına Gönder
                     </button>
