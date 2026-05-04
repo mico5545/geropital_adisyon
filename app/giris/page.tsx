@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/kutuphane/supabase";
+import { safeStorage } from "@/kutuphane/storage";
 
 export default function GirisSayfasi() {
   const router = useRouter();
@@ -33,16 +34,11 @@ export default function GirisSayfasi() {
       return;
     }
 
-    // iOS private mode'da localStorage erişim yok - try/catch ile handle et
-    try {
-      localStorage.setItem("kullanici", JSON.stringify(data));
-    } catch (e) {
-      // localStorage kullanılamıyor, sessionStorage'a kaydet
-      try {
-        sessionStorage.setItem("kullanici", JSON.stringify(data));
-      } catch (e2) {
-        console.warn("localStorage ve sessionStorage kullanılamıyor");
-      }
+    // iOS private mode uyumluluğu - safeStorage kullan
+    const saved = safeStorage.setItemLocal("kullanici", JSON.stringify(data));
+    if (!saved) {
+      setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
+      return;
     }
 
     if (data.rol === "merkez") {

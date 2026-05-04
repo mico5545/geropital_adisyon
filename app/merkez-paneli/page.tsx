@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
+import { safeStorage } from "@/kutuphane/storage";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
@@ -103,11 +104,8 @@ export default function MerkezPaneli() {
   const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
-    // localStorage yoksa sessionStorage'dan çek (iOS private mode uyumluluğu)
-    let kayitliKullanici = localStorage.getItem("kullanici");
-    if (!kayitliKullanici) {
-      kayitliKullanici = sessionStorage.getItem("kullanici");
-    }
+    // safeStorage kullan (iOS uyumluluğu)
+    const kayitliKullanici = safeStorage.getItemLocal("kullanici");
 
     if (!kayitliKullanici) {
       window.location.href = "/giris";
@@ -119,10 +117,7 @@ export default function MerkezPaneli() {
     setKullanici(aktifKullanici);
 
     // Ses durumu kontrol et
-    let kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
-    if (!kayitliSesDurumu) {
-      kayitliSesDurumu = sessionStorage.getItem("bildirim_sesi_aktif");
-    }
+    const kayitliSesDurumu = safeStorage.getItemLocal("bildirim_sesi_aktif");
 
     if (kayitliSesDurumu === "true") {
       sesAktifRef.current = true;
@@ -250,16 +245,8 @@ export default function MerkezPaneli() {
     sesAktifRef.current = yeniDurum;
     setSesAktif(yeniDurum);
 
-    // iOS private mode uyumluluğu - localStorage ve sessionStorage'a kaydet
-    try {
-      localStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
-    } catch (e) {
-      try {
-        sessionStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
-      } catch (e2) {
-        console.warn("Ses durumu kaydedilemedi");
-      }
-    }
+    // iOS uyumluluğu - safeStorage kullan
+    safeStorage.setItemLocal("bildirim_sesi_aktif", String(yeniDurum));
 
     if (yeniDurum) {
       bildirimSesiCal();
@@ -641,7 +628,8 @@ export default function MerkezPaneli() {
   }
 
   function cikisYap() {
-    localStorage.removeItem("kullanici");
+    safeStorage.removeItemLocal("kullanici");
+    safeStorage.removeItemLocal("bildirim_sesi_aktif");
     window.location.href = "/giris";
   }
 

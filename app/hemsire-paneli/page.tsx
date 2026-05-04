@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
+import { safeStorage } from "@/kutuphane/storage";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
@@ -89,11 +90,8 @@ export default function HemsirePaneli() {
   const [hemsireNotu, setHemsireNotu] = useState("");
 
   useEffect(() => {
-    // localStorage yoksa sessionStorage'dan çek (iOS private mode uyumluluğu)
-    let kayitliKullanici = localStorage.getItem("kullanici");
-    if (!kayitliKullanici) {
-      kayitliKullanici = sessionStorage.getItem("kullanici");
-    }
+    // safeStorage kullan (iOS uyumluluğu)
+    const kayitliKullanici = safeStorage.getItemLocal("kullanici");
 
     if (!kayitliKullanici) {
       window.location.href = "/giris";
@@ -472,7 +470,7 @@ export default function HemsirePaneli() {
   }
 
   function cikisYap() {
-    localStorage.removeItem("kullanici");
+    safeStorage.removeItemLocal("kullanici");
     window.location.href = "/giris";
   }
 
