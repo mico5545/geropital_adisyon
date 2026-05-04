@@ -65,7 +65,7 @@ export default function GunlukSahaPlani() {
   const [hemsireId, setHemsireId] = useState("");
   const [planSaati, setPlanSaati] = useState("");
   const [planNotu, setPlanNotu] = useState("");
-  const [hizmetId, setHizmetId] = useState("");
+  const [seciliHizmetler, setSeciliHizmetler] = useState<string[]>([]);
 
   const [arama, setArama] = useState("");
   const [durumFiltre, setDurumFiltre] = useState("");
@@ -138,6 +138,16 @@ export default function GunlukSahaPlani() {
     setHemsireler((hemsireData as Kullanici[]) || []);
     setHizmetler((hizmetData as Hizmet[]) || []);
     setYukleniyor(false);
+  }
+
+  function hizmetSecimiDegistir(hizmetId: string) {
+    setSeciliHizmetler((onceki) => {
+      if (onceki.includes(hizmetId)) {
+        return onceki.filter((id) => id !== hizmetId);
+      }
+
+      return [...onceki, hizmetId];
+    });
   }
 
   function hastaBilgisiGetir(kayit: Kayit) {
@@ -255,17 +265,21 @@ export default function GunlukSahaPlani() {
       return;
     }
 
-    const hizmet = hizmetler.find((h) => h.id === hizmetId);
-
-    if (hizmet) {
-      const { error: hizmetHata } = await supabase.from("hasta_hizmetleri").insert({
+    const secilenHizmetKayitlari = hizmetler
+      .filter((hizmet) => seciliHizmetler.includes(hizmet.id))
+      .map((hizmet) => ({
         hasta_kaydi_id: kayit.id,
         hizmet_adi: hizmet.hizmet_adi,
         hizmet_tipi: "Merkez Plan Hizmeti",
         adet: 1,
         birim_fiyat: hizmet.fiyat,
         aciklama: "Günlük saha planından eklendi.",
-      });
+      }));
+
+    if (secilenHizmetKayitlari.length > 0) {
+      const { error: hizmetHata } = await supabase
+        .from("hasta_hizmetleri")
+        .insert(secilenHizmetKayitlari);
 
       if (hizmetHata) {
         console.log("Hizmet ekleme hatası:", hizmetHata);
@@ -278,7 +292,7 @@ export default function GunlukSahaPlani() {
     setHemsireId("");
     setPlanSaati("");
     setPlanNotu("");
-    setHizmetId("");
+    setSeciliHizmetler([]);
 
     await verileriGetir();
     alert("Planlı hasta kaydı oluşturuldu.");
@@ -310,34 +324,34 @@ export default function GunlukSahaPlani() {
         }
       />
 
-      <div className="max-w-7xl mx-auto p-5">
-        <section className="grid lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5">
+        <section className="grid sm:grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
           <form
             onSubmit={kayitOlustur}
-            className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit space-y-3"
+            className="kurumsal-kart kurumsal-hover rounded-2xl sm:rounded-3xl p-4 sm:p-6 h-fit space-y-3"
           >
-            <h2 className="text-xl font-black text-slate-900">
+            <h2 className="text-lg sm:text-xl font-black text-slate-900">
               Planlı Hasta Kaydı Aç
             </h2>
 
             <input
               value={hastaAdi}
               onChange={(e) => setHastaAdi(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
               placeholder="Hasta adı soyadı"
             />
 
             <input
               value={telefon}
               onChange={(e) => setTelefon(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
               placeholder="Telefon"
             />
 
             <textarea
               value={adres}
               onChange={(e) => setAdres(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-20"
+              className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 min-h-16 sm:min-h-20 text-sm"
               placeholder="Adres"
             />
 
@@ -367,18 +381,40 @@ export default function GunlukSahaPlani() {
               ))}
             </select>
 
-            <select
-              value={hizmetId}
-              onChange={(e) => setHizmetId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-            >
-              <option value="">Hizmet seçiniz</option>
-              {hizmetler.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.hizmet_adi} - {Number(h.fiyat).toLocaleString("tr-TR")} TL
-                </option>
-              ))}
-            </select>
+            <div className="border border-slate-300 rounded-2xl p-3 bg-white">
+              <p className="text-sm font-black text-slate-800 mb-3">
+                Hizmetler
+              </p>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {hizmetler.map((hizmet) => (
+                  <label
+                    key={hizmet.id}
+                    className={`flex items-center justify-between gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                      seciliHizmetler.includes(hizmet.id)
+                        ? "border-[#144a7b] bg-[#e8f1fb]"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={seciliHizmetler.includes(hizmet.id)}
+                        onChange={() => hizmetSecimiDegistir(hizmet.id)}
+                      />
+
+                      <span className="font-bold text-slate-800">
+                        {hizmet.hizmet_adi}
+                      </span>
+                    </div>
+
+                    <span className="font-black text-[#144a7b]">
+                      {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <textarea
               value={planNotu}
@@ -433,7 +469,7 @@ export default function GunlukSahaPlani() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-3 mb-5">
+            <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 mb-5">
               <input
                 value={arama}
                 onChange={(e) => setArama(e.target.value)}

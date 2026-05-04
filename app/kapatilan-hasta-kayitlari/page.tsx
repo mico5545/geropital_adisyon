@@ -187,8 +187,8 @@ export default function KapatilanHastaKayitlari() {
         ]}
       />
 
-      <div className="max-w-7xl mx-auto p-5">
-        <section className="kurumsal-kart rounded-3xl p-6">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5">
+        <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6">
           {kayitlar.length === 0 && (
             <p className="text-slate-500">Kapatılan hasta kaydı bulunmuyor.</p>
           )}

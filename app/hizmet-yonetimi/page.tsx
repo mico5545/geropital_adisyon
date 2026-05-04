@@ -147,12 +147,12 @@ export default function HizmetYonetimi() {
           </button>
         }
       />
-      <div className="max-w-7xl mx-auto p-5">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5">
 
-        <section className="kurumsal-kart rounded-3xl p-6 mb-6">
+        <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
           <h2 className="text-xl font-black text-slate-900 mb-4">Yeni Hizmet Ekle</h2>
 
-          <form onSubmit={hizmetEkle} className="grid md:grid-cols-5 gap-3">
+          <form onSubmit={hizmetEkle} className="grid sm:grid-cols-1 md:grid-cols-5 gap-2 sm:gap-3">
             <input
               value={hizmetAdi}
               onChange={(e) => setHizmetAdi(e.target.value)}
@@ -187,9 +187,9 @@ export default function HizmetYonetimi() {
           </form>
         </section>
 
-        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <section className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {hizmetler.map((hizmet) => (
-            <div key={hizmet.id} className="kurumsal-kart rounded-3xl p-5">
+            <div key={hizmet.id} className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-5">
               <div className="flex justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-black text-slate-900">

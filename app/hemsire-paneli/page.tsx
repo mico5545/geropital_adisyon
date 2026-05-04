@@ -494,8 +494,8 @@ export default function HemsirePaneli() {
         }
       />
 
-      <div className="max-w-7xl mx-auto p-5 grid lg:grid-cols-3 gap-6">
-        <section className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5 grid sm:grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+        <section className="kurumsal-kart kurumsal-hover rounded-2xl sm:rounded-3xl p-4 sm:p-6 h-fit">
           <h2 className="text-xl font-black text-slate-900 mb-4">
             Yeni Hasta Kaydı Aç
           </h2>
@@ -581,7 +581,7 @@ export default function HemsirePaneli() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-3 mt-4">
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 mt-4">
                   <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
                     <p className="text-xs text-slate-500">Toplam Tutar</p>
                     <p className="font-black text-slate-900">
@@ -622,7 +622,7 @@ export default function HemsirePaneli() {
             <p className="text-slate-500">Kapatılmış kayıt bulunmuyor.</p>
           )}
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {kapatilanKayitlar.map((kayit) => (
               <div
                 key={kayit.id}
@@ -684,7 +684,7 @@ export default function HemsirePaneli() {
               </button>
             </div>
 
-            <section className="grid md:grid-cols-2 gap-4 mb-5">
+            <section className="grid sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-5">
               <div className="bg-blue-50 rounded-2xl p-4">
                 <p className="font-black text-blue-900">Merkez Notu</p>
                 <p className="text-blue-900 mt-1">
@@ -739,7 +739,7 @@ export default function HemsirePaneli() {
                     Sahada Ek Hizmet Ekle
                   </h3>
 
-                  <div className="grid md:grid-cols-4 gap-3">
+                  <div className="grid sm:grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3">
                     <select
                       value={seciliHizmetId}
                       onChange={(e) => hizmetSec(e.target.value)}
@@ -789,7 +789,7 @@ export default function HemsirePaneli() {
                     Ödeme Durumu Bildir
                   </h3>
 
-                  <div className="grid md:grid-cols-2 gap-3">
+                  <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                     <select
                       value={odemeDurumu}
                       onChange={(e) => setOdemeDurumu(e.target.value)}

@@ -88,33 +88,33 @@ export default function VeritabaniTesti() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow p-6">
-        <h1 className="text-3xl font-black text-slate-900">
+    <main className="min-h-screen bg-slate-100 p-3 sm:p-6">
+      <div className="max-w-3xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
           Veritabanı Testi
         </h1>
 
-        <p className="text-slate-600 mt-2">
+        <p className="text-xs sm:text-sm text-slate-600 mt-2">
           Bu ekran Supabase’e gerçekten kayıt yazılıp yazılmadığını test eder.
         </p>
 
-        <div className="flex flex-wrap gap-3 mt-6">
+        <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-6">
           <button
             onClick={testHastaKaydiOlustur}
-            className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black"
+            className="bg-blue-600 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-sm flex-1 sm:flex-initial"
           >
             Test Hasta Kaydı Oluştur
           </button>
 
           <button
             onClick={sonKayitlariGetir}
-            className="bg-slate-900 text-white px-5 py-3 rounded-xl font-black"
+            className="bg-slate-900 text-white px-3 sm:px-5 py-2 sm:py-3 rounded-lg sm:rounded-xl font-black text-sm flex-1 sm:flex-initial"
           >
             Son Kayıtları Getir
           </button>
         </div>
 
-        <pre className="mt-6 bg-slate-950 text-green-300 rounded-2xl p-4 overflow-auto text-sm whitespace-pre-wrap">
+        <pre className="mt-4 sm:mt-6 bg-slate-950 text-green-300 rounded-lg sm:rounded-2xl p-3 sm:p-4 overflow-auto text-xs sm:text-sm whitespace-pre-wrap max-h-96">
           {sonuc || "Henüz test yapılmadı."}
         </pre>
       </div>

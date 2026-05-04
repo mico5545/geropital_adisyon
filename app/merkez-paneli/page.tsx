@@ -83,6 +83,7 @@ export default function MerkezPaneli() {
   const [hastaAdresi, setHastaAdresi] = useState("");
   const [merkezNotu, setMerkezNotu] = useState("");
 
+  const [seciliHizmetler, setSeciliHizmetler] = useState<string[]>([]);
   const [seciliHizmetId, setSeciliHizmetId] = useState("");
   const [hizmetAdet, setHizmetAdet] = useState("1");
   const [hizmetFiyat, setHizmetFiyat] = useState("");
@@ -112,6 +113,13 @@ export default function MerkezPaneli() {
     const aktifKullanici = JSON.parse(kayitliKullanici);
 
     setKullanici(aktifKullanici);
+
+    const kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
+
+    if (kayitliSesDurumu === "true") {
+      sesAktifRef.current = true;
+      setSesAktif(true);
+    }
 
     verileriGetir();
 
@@ -207,18 +215,35 @@ export default function MerkezPaneli() {
     if (bildirimHata) console.log("Bildirimler çekilemedi:", bildirimHata);
     if (hemsireHata) console.log("Hemşireler çekilemedi:", hemsireHata);
 
-    setHastaKayitlari((kayitData as HastaKaydi[]) || []);
+    const gelenKayitlar = (kayitData as unknown as HastaKaydi[]) || [];
+
+    setHastaKayitlari(gelenKayitlar);
     setHizmetler((hizmetData as Hizmet[]) || []);
     setBildirimler((bildirimData as Bildirim[]) || []);
     setHemsireler((hemsireData as Kullanici[]) || []);
+
+    const adresParametresi = new URLSearchParams(window.location.search);
+    const acilacakKayitId = adresParametresi.get("kayit");
+
+    if (acilacakKayitId) {
+      const bulunanKayit = gelenKayitlar.find((kayit) => kayit.id === acilacakKayitId);
+
+      if (bulunanKayit) {
+        setSeciliKayit(bulunanKayit);
+      }
+    }
+
     setYukleniyor(false);
   }
 
   function bildirimSesiniAktifEt() {
-    sesAktifRef.current = !sesAktifRef.current;
-    setSesAktif(!sesAktif);
-    
-    if (sesAktifRef.current) {
+    const yeniDurum = !sesAktifRef.current;
+
+    sesAktifRef.current = yeniDurum;
+    setSesAktif(yeniDurum);
+    localStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
+
+    if (yeniDurum) {
       bildirimSesiCal();
     }
   }
@@ -394,17 +419,21 @@ export default function MerkezPaneli() {
       return;
     }
 
-    if (seciliHizmetId) {
+    const secilenHizmetKayitlari = hizmetler
+      .filter((hizmet) => seciliHizmetler.includes(hizmet.id))
+      .map((hizmet) => ({
+        hasta_kaydi_id: kayit.id,
+        hizmet_adi: hizmet.hizmet_adi,
+        hizmet_tipi: "Merkez Kaydı",
+        adet: 1,
+        birim_fiyat: hizmet.fiyat,
+        aciklama: hizmet.aciklama || "",
+      }));
+
+    if (secilenHizmetKayitlari.length > 0) {
       const { error: hizmetHata } = await supabase
         .from("hasta_hizmetleri")
-        .insert({
-          hasta_kaydi_id: kayit.id,
-          hizmet_adi: hizmetler.find((h) => h.id === seciliHizmetId)?.hizmet_adi || "",
-          hizmet_tipi: "Merkez Kaydı",
-          adet: Number(hizmetAdet),
-          birim_fiyat: Number(hizmetFiyat),
-          aciklama: hizmetAciklama || "",
-        });
+        .insert(secilenHizmetKayitlari);
 
       if (hizmetHata) {
         console.log("Hizmet ekleme hatası:", hizmetHata);
@@ -416,6 +445,7 @@ export default function MerkezPaneli() {
     setHastaAdresi("");
     setHemsireId("");
     setMerkezNotu("");
+    setSeciliHizmetler([]);
     setSeciliHizmetId("");
     setHizmetAdet("1");
     setHizmetFiyat("");
@@ -434,6 +464,16 @@ export default function MerkezPaneli() {
       setHizmetFiyat(String(hizmet.fiyat));
       setHizmetAciklama(hizmet.aciklama || "");
     }
+  }
+
+  function hizmetSecimiDegistir(hizmetId: string) {
+    setSeciliHizmetler((onceki) => {
+      if (onceki.includes(hizmetId)) {
+        return onceki.filter((id) => id !== hizmetId);
+      }
+
+      return [...onceki, hizmetId];
+    });
   }
 
   async function hizmetEkle() {
@@ -608,13 +648,13 @@ export default function MerkezPaneli() {
           <div className="flex gap-3">
             <button
               onClick={bildirimSesiniAktifEt}
-              className={`px-4 py-2 rounded-xl font-bold transition ${
+              className={
                 sesAktif
-                  ? "bg-green-100 text-green-900 hover:bg-green-200"
-                  : "bg-red-100 text-red-900 hover:bg-red-200"
-              }`}
+                  ? "bg-emerald-100 text-emerald-900 px-4 py-2 rounded-xl font-bold transition hover:bg-emerald-200"
+                  : "bg-slate-100 text-slate-700 px-4 py-2 rounded-xl font-bold transition hover:bg-slate-200"
+              }
             >
-              {sesAktif ? "Ses Aktif" : "Sesi Aktif Et"}
+              {sesAktif ? "Ses Açık" : "Sesi Aç"}
             </button>
 
             <button
@@ -659,8 +699,8 @@ export default function MerkezPaneli() {
           </section>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <section className="kurumsal-kart kurumsal-hover rounded-3xl p-6 h-fit yumusak-giris">
+        <div className="grid sm:grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+          <section className="kurumsal-kart kurumsal-hover rounded-2xl sm:rounded-3xl p-4 sm:p-6 h-fit yumusak-giris">
             <h2 className="text-xl font-black text-slate-900 mb-4">
               Yeni Hasta Kaydı Aç
             </h2>
@@ -700,18 +740,40 @@ export default function MerkezPaneli() {
                 ))}
               </select>
 
-              <select
-                value={seciliHizmetId}
-                onChange={(e) => hizmetSec(e.target.value)}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-              >
-                <option value="">Hizmet seçiniz </option>
-                {hizmetler.filter((h) => h.aktif).map((hizmet) => (
-                  <option key={hizmet.id} value={hizmet.id}>
-                    {hizmet.hizmet_adi} - {hizmet.fiyat} TL
-                  </option>
-                ))}
-              </select>
+              <div className="border border-slate-300 rounded-2xl p-3 bg-white">
+                <p className="text-sm font-black text-slate-800 mb-3">
+                  Hizmetler
+                </p>
+
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {hizmetler.filter((h) => h.aktif).map((hizmet) => (
+                    <label
+                      key={hizmet.id}
+                      className={`flex items-center justify-between gap-3 rounded-xl border p-3 cursor-pointer transition ${
+                        seciliHizmetler.includes(hizmet.id)
+                          ? "border-[#144a7b] bg-[#e8f1fb]"
+                          : "border-slate-200 bg-white hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={seciliHizmetler.includes(hizmet.id)}
+                          onChange={() => hizmetSecimiDegistir(hizmet.id)}
+                        />
+
+                        <span className="font-bold text-slate-800">
+                          {hizmet.hizmet_adi}
+                        </span>
+                      </div>
+
+                      <span className="font-black text-[#144a7b]">
+                        {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
               <textarea
                 value={merkezNotu}
@@ -773,7 +835,7 @@ export default function MerkezPaneli() {
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-3 mt-4">
+                    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 mt-4">
                       <div className="bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-3">
                         <p className="text-xs text-slate-500">Toplam Tutar</p>
                         <p className="font-black text-slate-900">
@@ -832,7 +894,7 @@ export default function MerkezPaneli() {
               </button>
             </div>
 
-            <section className="grid md:grid-cols-2 gap-4 mb-5">
+            <section className="grid sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-5">
               <div className="bg-blue-50 rounded-2xl p-4">
                 <p className="font-black text-blue-900">Merkez Notu</p>
                 <p className="text-blue-900 mt-1">
@@ -884,7 +946,7 @@ export default function MerkezPaneli() {
                 Merkez Hizmeti Ekle
               </h3>
 
-              <div className="grid md:grid-cols-4 gap-3">
+              <div className="grid sm:grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3">
                 <select
                   value={seciliHizmetId}
                   onChange={(e) => hizmetSec(e.target.value)}

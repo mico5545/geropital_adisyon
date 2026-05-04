@@ -85,11 +85,11 @@ export default function BildirimlerSayfasi() {
           </button>
         }
       />
-      <div className="max-w-7xl mx-auto p-5">
+      <div className="max-w-7xl mx-auto p-3 sm:p-5">
 
-        <section className="space-y-3">
+        <section className="space-y-2 sm:space-y-3">
           {bildirimler.length === 0 && (
-            <div className="bg-white rounded-3xl shadow p-6 text-slate-500">
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow p-4 sm:p-6 text-slate-500 text-sm">
               Bildirim bulunmuyor.
             </div>
           )}
@@ -97,38 +97,38 @@ export default function BildirimlerSayfasi() {
           {bildirimler.map((bildirim) => (
             <div
               key={bildirim.id}
-              className={`rounded-3xl shadow p-5 border ${
+              className={`rounded-2xl sm:rounded-3xl shadow p-4 sm:p-5 border text-sm sm:text-base ${
                 bildirim.okundu
                   ? "bg-white border-slate-200"
                   : "bg-amber-50 border-amber-200"
               }`}
             >
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+              <div className="flex flex-col gap-3">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">
+                  <h2 className="text-base sm:text-xl font-black text-slate-900">
                     {bildirim.baslik}
                   </h2>
 
-                  <p className="text-slate-700 mt-1">{bildirim.mesaj}</p>
+                  <p className="text-slate-700 mt-1 text-sm">{bildirim.mesaj}</p>
 
-                  <p className="text-xs text-slate-500 mt-3">
+                  <p className="text-xs text-slate-500 mt-2">
                     {tarihFormatla(bildirim.olusturma_tarihi)}
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {!bildirim.okundu && (
                     <button
                       onClick={() => okunduYap(bildirim.id)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold"
+                      className="bg-blue-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm flex-1 sm:flex-initial"
                     >
                       Okundu Yap
                     </button>
                   )}
 
                   <a
-                    href="/merkez-paneli"
-                    className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
+                    href={`/merkez-paneli?kayit=${bildirim.hasta_kaydi_id}`}
+                    className="bg-slate-900 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm flex-1 sm:flex-initial text-center"
                   >
                     Kayda Git
                   </a>

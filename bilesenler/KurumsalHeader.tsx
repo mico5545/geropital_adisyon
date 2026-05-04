@@ -26,23 +26,23 @@ export default function KurumsalHeader({
   const pathname = usePathname();
 
   return (
-    <header className="kurumsal-kart kurumsal-hover rounded-none border-b border-[#144a7b]/10 p-5 print-hidden">
-      <div className="max-w-7xl mx-auto flex flex-col gap-4">
+    <header className="kurumsal-kart kurumsal-hover rounded-none border-b border-[#144a7b]/10 p-4 sm:p-5 print-hidden">
+      <div className="max-w-7xl mx-auto flex flex-col gap-3 sm:gap-4">
         {(baslik || aciklama) && (
           <div className="flex flex-col gap-1 mb-2">
-            {baslik && <h1 className="text-2xl font-bold text-[#144a7b]">{baslik}</h1>}
-            {aciklama && <p className="text-sm text-gray-600">{aciklama}</p>}
+            {baslik && <h1 className="text-xl sm:text-2xl font-bold text-[#144a7b]">{baslik}</h1>}
+            {aciklama && <p className="text-xs sm:text-sm text-gray-600">{aciklama}</p>}
           </div>
         )}
         
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3 flex-1">
+        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1">
           <KurumsalLogo />
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-1 sm:gap-2 w-full flex-wrap">
             {linkler.map((link) => {
               const isActive = pathname === link.href;
               let className =
-                "flex-1 px-4 py-2 rounded-xl font-bold transition hover:-translate-y-0.5 flex items-center justify-center text-center";
+                "flex-1 min-w-[70px] sm:min-w-[90px] px-2 sm:px-4 py-1 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition hover:-translate-y-0.5 flex items-center justify-center text-center";
 
               if (isActive) {
                 className += " kurumsal-buton";
@@ -65,7 +65,7 @@ export default function KurumsalHeader({
           </div>
         </div>
 
-        <div>
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           {sagAlan}
         </div>
         </div>
