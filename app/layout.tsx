@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Geropital - Evde Sağlık ve Bakım",
   description: "Evde sağlık ve bakım hizmetleri yönetim sistemi",
+  viewport: "width=device-width, initial-scale=1.0, viewport-fit=cover",
 };
 
 export default function RootLayout({
