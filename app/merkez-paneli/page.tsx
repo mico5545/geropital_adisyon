@@ -291,35 +291,69 @@ export default function MerkezPaneli() {
   }
 
   function bildirimSesiCal() {
-    if (!sesAktifRef.current) return;
-
     try {
-      const audioContext = new AudioContext();
+      const audioContext = new (window.AudioContext ||
+        (window as typeof window & {
+          webkitAudioContext: typeof AudioContext;
+        }).webkitAudioContext)();
 
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const masterGain = audioContext.createGain();
+      masterGain.connect(audioContext.destination);
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      masterGain.gain.exponentialRampToValueAtTime(
+        0.18,
+        audioContext.currentTime + 0.08
+      );
 
-      oscillator.type = "sine";
+      masterGain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        audioContext.currentTime + 2
+      );
 
-      const t = audioContext.currentTime;
+      const notalar = [
+        { freq: 523.25, start: 0, duration: 0.7 },
+        { freq: 659.25, start: 0.22, duration: 0.7 },
+        { freq: 783.99, start: 0.45, duration: 0.9 },
+      ];
 
-      // 1. ding
-      oscillator.frequency.setValueAtTime(880, t);
-      gainNode.gain.setValueAtTime(0.2, t);
+      notalar.forEach((nota) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
 
-      // 2. ding (yumuşak tekrar)
-      oscillator.frequency.setValueAtTime(660, t + 0.4);
+        osc.type = "sine";
 
-      // fade out
-      gainNode.gain.exponentialRampToValueAtTime(0.01, t + 1.2);
+        osc.frequency.setValueAtTime(
+          nota.freq,
+          audioContext.currentTime + nota.start
+        );
 
-      oscillator.start(t);
-      oscillator.stop(t + 1.2);
-    } catch (err) {
-      console.log("Ses hatası:", err);
+        gain.gain.setValueAtTime(
+          0.0001,
+          audioContext.currentTime + nota.start
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+          0.12,
+          audioContext.currentTime + nota.start + 0.04
+        );
+
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          audioContext.currentTime + nota.start + nota.duration
+        );
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(audioContext.currentTime + nota.start);
+
+        osc.stop(
+          audioContext.currentTime + nota.start + nota.duration
+        );
+      });
+    } catch (error) {
+      console.log("Bildirim sesi çalınamadı:", error);
     }
   }
 
