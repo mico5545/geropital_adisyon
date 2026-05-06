@@ -105,20 +105,30 @@ export default function KapatilanHastaKayitlari() {
 
     if (!onay) return;
 
-    const { error } = await supabase
-      .from("hasta_kayitlari")
-      .delete()
-      .eq("id", kayitId);
+    try {
+      // Cascade delete: Tüm ilgili kayıtları sil
+      await supabase.from("hasta_hizmetleri").delete().eq("hasta_kaydi_id", kayitId);
+      await supabase.from("odemeler").delete().eq("hasta_kaydi_id", kayitId);
+      await supabase.from("bildirimler").delete().eq("hasta_kaydi_id", kayitId);
 
-    if (error) {
-      console.log("Kayıt silme hatası:", error);
-      alert("Kayıt silinemedi.");
-      return;
+      const { error } = await supabase
+        .from("hasta_kayitlari")
+        .delete()
+        .eq("id", kayitId);
+
+      if (error) {
+        console.log("Kayıt silme hatası:", error);
+        alert("Kayıt silinemedi.");
+        return;
+      }
+
+      setSeciliKayit(null);
+      await verileriGetir();
+      alert("Kayıt ve tüm ilgili veriler kalıcı olarak silindi.");
+    } catch (err) {
+      console.error("Silme işlemi hatası:", err);
+      alert("Silme işlemi sırasında bir hata oluştu.");
     }
-
-    setSeciliKayit(null);
-    await verileriGetir();
-    alert("Kayıt kalıcı olarak silindi.");
   }
 
   function hastaAdiGetir(kayit: HastaKaydi) {
@@ -288,7 +298,7 @@ export default function KapatilanHastaKayitlari() {
 
               <button
                 onClick={() => kaydiKaliciSil(kayit.id)}
-                className="w-full mt-2 bg-red-50 text-red-700 rounded-xl py-3 font-black transition hover:bg-red-100"
+                className="w-full mt-2 bg-red-600 text-white rounded-xl py-3 font-black transition hover:bg-red-700"
               >
                 Kalıcı Sil
               </button>
