@@ -89,7 +89,6 @@ export default function HemsirePaneli() {
   const [odemeAciklama, setOdemeAciklama] = useState("");
   const [hemsireNotu, setHemsireNotu] = useState("");
 
-  const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const kayitKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -109,63 +108,12 @@ export default function HemsirePaneli() {
 
     setKullanici(aktifKullanici);
 
-    // Geri/İleri tuşu ve navigation event'leri kontrol et
-    const handlePopState = () => {
-      // Tüm interval'ları hemen temizle
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-        sessionCheckIntervalRef.current = null;
-      }
-      if (kayitKontrolIntervalRef.current) {
-        clearInterval(kayitKontrolIntervalRef.current);
-        kayitKontrolIntervalRef.current = null;
-      }
-
-      // Event listener'ları sil
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-
-      // Session'ı temizle
-      safeStorage.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Soft navigation - replace yerine href kullan
-      window.location.href = "/giris";
-    };
-
-    // Sayfa değişiminde session check et
-    const handleBeforeUnload = () => {
-      if (!safeStorage.isSessionValid()) {
-        return;
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Düzenli session validation (3 saniye interval)
-    sessionCheckIntervalRef.current = setInterval(() => {
-      if (!safeStorage.isSessionValid()) {
-        if (sessionCheckIntervalRef.current) {
-          clearInterval(sessionCheckIntervalRef.current);
-          sessionCheckIntervalRef.current = null;
-        }
-        window.location.replace("/giris");
-      }
-    }, 3000);
-
     verileriGetir(aktifKullanici.id);
 
     return () => {
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
       if (kayitKontrolIntervalRef.current) {
         clearInterval(kayitKontrolIntervalRef.current);
       }
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 

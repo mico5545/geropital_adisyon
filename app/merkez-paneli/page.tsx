@@ -86,7 +86,6 @@ export default function MerkezPaneli() {
       ? localStorage.getItem("bildirim_sesi")
       : null;
   const [sesAktif, setSesAktif] = useState(kayitliSes === "true");
-  const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const bildirimKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [hastaAdi, setHastaAdi] = useState("");
@@ -135,53 +134,6 @@ export default function MerkezPaneli() {
 
     verileriGetir();
 
-    // Geri/İleri tuşu ve navigation event'leri kontrol et
-    const handlePopState = () => {
-      // Tüm interval'ları hemen temizle
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-        sessionCheckIntervalRef.current = null;
-      }
-      if (bildirimKontrolIntervalRef.current) {
-        clearInterval(bildirimKontrolIntervalRef.current);
-        bildirimKontrolIntervalRef.current = null;
-      }
-
-      // Event listener'ları sil
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-
-      // Session'ı temizle
-      safeStorage.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-
-      // Soft navigation - replace yerine href kullan
-      window.location.href = "/giris";
-    };
-
-    // Sayfa değişiminde session check et (beforeunload vs)
-    const handleBeforeUnload = () => {
-      // Session'ı validate et ama page unload olacak zaten
-      if (!safeStorage.isSessionValid()) {
-        return;
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Düzenli session validation (3 saniye interval)
-    sessionCheckIntervalRef.current = setInterval(() => {
-      if (!safeStorage.isSessionValid()) {
-        if (sessionCheckIntervalRef.current) {
-          clearInterval(sessionCheckIntervalRef.current);
-          sessionCheckIntervalRef.current = null;
-        }
-        window.location.replace("/giris");
-      }
-    }, 3000);
-
     bildirimKontrolIntervalRef.current = setInterval(async () => {
       const { data, error } = await supabase
         .from("bildirimler")
@@ -209,14 +161,9 @@ export default function MerkezPaneli() {
     }, 3000);
 
     return () => {
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
       if (bildirimKontrolIntervalRef.current) {
         clearInterval(bildirimKontrolIntervalRef.current);
       }
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
