@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
-import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Bildirim = {
   id: string;
@@ -56,7 +55,7 @@ export default function BildirimlerSayfasi() {
     
     setTimeout(() => {
       setYukleniyor(false);
-    }, 1000);
+    }, 800);
   }
 
   async function okunduYap(id: string) {
@@ -158,7 +157,6 @@ export default function BildirimlerSayfasi() {
         </section>
       </div>
     </main>
-    <MobilAltMenu />
     </>
   );
 }

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
-import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -141,7 +140,7 @@ export default function GunlukSahaPlani() {
     
     setTimeout(() => {
       setYukleniyor(false);
-    }, 1000);
+    }, 800);
   }
 
   function hizmetSecimiDegistir(hizmetId: string) {
@@ -593,7 +592,6 @@ export default function GunlukSahaPlani() {
         </section>
       </div>
     </main>
-    <MobilAltMenu />
     </>
   );
 }

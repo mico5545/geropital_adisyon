@@ -6,7 +6,6 @@ import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalNavbar from "@/bilesenler/KurumsalNavbar";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
-import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type HastaKaydi = {
   id: string;
@@ -97,10 +96,10 @@ export default function KapatilanHastaKayitlari() {
 
     setKayitlar((data as HastaKaydi[]) || []);
     
-    // 1 saniye loading göster
+    // 0.8 saniye loading göster
     setTimeout(() => {
       setYukleniyor(false);
-    }, 1000);
+    }, 400);
   }
 
   async function kaydiKaliciSil(kayitId: string) {
@@ -421,9 +420,7 @@ export default function KapatilanHastaKayitlari() {
             </section>
           </div>
         </div>
-      )}
-    </main>
-    <MobilAltMenu />
+      )}\n    </main>
     </>
   );
 }

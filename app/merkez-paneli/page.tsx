@@ -6,7 +6,6 @@ import { safeStorage } from "@/kutuphane/storage";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
-import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -115,8 +114,7 @@ export default function MerkezPaneli() {
   const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
-    // safeStorage kullan (iOS uyumluluğu)
-    const kayitliKullanici = safeStorage.getItemLocal("kullanici");
+    const kayitliKullanici = localStorage.getItem("kullanici");
 
     if (!kayitliKullanici) {
       window.location.replace("/giris");
@@ -128,7 +126,7 @@ export default function MerkezPaneli() {
     setKullanici(aktifKullanici);
 
     // Ses durumu kontrol et
-    const kayitliSesDurumu = safeStorage.getItemLocal("bildirim_sesi_aktif");
+    const kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
 
     if (kayitliSesDurumu === "true") {
       sesAktifRef.current = true;
@@ -303,7 +301,7 @@ export default function MerkezPaneli() {
 
     setTimeout(() => {
       setYukleniyor(false);
-    }, 1000);
+    }, 800);
   }
 
   function bildirimSesiniAktifEt() {
@@ -1226,7 +1224,6 @@ export default function MerkezPaneli() {
         </div>
       )}
     </main>
-    <MobilAltMenu />
     </>
   );
 }

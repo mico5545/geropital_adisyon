@@ -5,7 +5,6 @@ import { supabase } from "@/kutuphane/supabase";
 import { safeStorage } from "@/kutuphane/storage";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
-import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -94,8 +93,7 @@ export default function HemsirePaneli() {
   const kayitKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // safeStorage kullan (iOS uyumluluğu)
-    const kayitliKullanici = safeStorage.getItemLocal("kullanici");
+    const kayitliKullanici = localStorage.getItem("kullanici");
 
     if (!kayitliKullanici) {
       window.location.href = "/giris";
@@ -245,7 +243,7 @@ export default function HemsirePaneli() {
 
     setTimeout(() => {
       setYukleniyor(false);
-    }, 1000);
+    }, 800);
   }
 
   function hastaBilgisiGetir(kayit: HastaKaydi) {
@@ -926,7 +924,6 @@ export default function HemsirePaneli() {
         </div>
       )}
     </main>
-    <MobilAltMenu />
     </>
   );
 }

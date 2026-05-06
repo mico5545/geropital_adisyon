@@ -15,7 +15,7 @@ export default function GirisSayfasi() {
 
   useEffect(() => {
     // Zaten login'se, giriş sayfasını gösterme - paneline yönlendir
-    const kayitliKullanici = safeStorage.getItemLocal("kullanici");
+    const kayitliKullanici = localStorage.getItem("kullanici");
     if (kayitliKullanici) {
       try {
         const kullanici = JSON.parse(kayitliKullanici);
@@ -57,43 +57,21 @@ export default function GirisSayfasi() {
         return;
       }
 
-      // iOS private mode uyumluluğu - safeStorage ile verification
-      const kullaniciJson = JSON.stringify(data);
-      const saved = safeStorage.setItemLocal("kullanici", kullaniciJson);
-      
-      if (!saved) {
-        setYukleniyor(false);
-        setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
-        return;
-      }
+      localStorage.setItem("kullanici", JSON.stringify(data));
 
-      // Biraz bekle ve kontrol et (iOS 15 işlemi tamamlansın)
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      setTimeout(() => {
+        if (data.rol === "merkez") {
+          window.location.replace("/merkez-paneli");
+          return;
+        }
 
-      // Session'ı verify et
-      const verify = safeStorage.getItemLocal("kullanici");
-      if (!verify) {
-        setYukleniyor(false);
-        setHata("Session kaydı başarısız. Lütfen tekrar deneyin.");
-        return;
-      }
+        if (data.rol === "hemsire") {
+          window.location.replace("/hemsire-paneli");
+          return;
+        }
 
-      // 1 saniye loading göster sonra panele yönlendir
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (data.rol === "merkez") {
-        // window.location yerine router.push (SPA optimization)
-        router.push("/merkez-paneli");
-        return;
-      }
-
-      if (data.rol === "hemsire") {
-        router.push("/hemsire-paneli");
-        return;
-      }
-
-      setYukleniyor(false);
-      setHata("Kullanıcı rolü tanımsız.");
+        setHata("Kullanıcı rolü tanımsız.");
+      }, 100);
     } catch (err) {
       console.error("Giriş hatası:", err);
       setYukleniyor(false);
