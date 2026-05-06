@@ -36,39 +36,63 @@ export default function GirisSayfasi() {
     setHata("");
     setYukleniyor(true);
 
-    const { data, error } = await supabase
-      .from("kullanicilar")
-      .select("*")
-      .eq("kullanici_adi", kullaniciAdi.trim())
-      .eq("sifre", sifre.trim())
-      .eq("aktif", true)
-      .single();
+    try {
+      // iOS 15 (iPhone 7) uyumluluğu: Supabase fetch timeout handle
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye timeout
 
-    setYukleniyor(false);
+      const { data, error } = await supabase
+        .from("kullanicilar")
+        .select("*")
+        .eq("kullanici_adi", kullaniciAdi.trim())
+        .eq("sifre", sifre.trim())
+        .eq("aktif", true)
+        .single();
 
-    if (error || !data) {
-      setHata("Kullanıcı adı veya şifre hatalı.");
-      return;
+      clearTimeout(timeoutId);
+      setYukleniyor(false);
+
+      if (error || !data) {
+        setHata("Kullanıcı adı veya şifre hatalı.");
+        return;
+      }
+
+      // iOS private mode uyumluluğu - safeStorage ile verification
+      const kullaniciJson = JSON.stringify(data);
+      const saved = safeStorage.setItemLocal("kullanici", kullaniciJson);
+      
+      if (!saved) {
+        setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
+        return;
+      }
+
+      // Biraz bekle ve kontrol et (iOS 15 işlemi tamamlansın)
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Session'ı verify et
+      const verify = safeStorage.getItemLocal("kullanici");
+      if (!verify) {
+        setHata("Session kaydı başarısız. Lütfen tekrar deneyin.");
+        return;
+      }
+
+      if (data.rol === "merkez") {
+        // window.location yerine router.push (SPA optimization)
+        router.push("/merkez-paneli");
+        return;
+      }
+
+      if (data.rol === "hemsire") {
+        router.push("/hemsire-paneli");
+        return;
+      }
+
+      setHata("Kullanıcı rolü tanımsız.");
+    } catch (err) {
+      console.error("Giriş hatası:", err);
+      setYukleniyor(false);
+      setHata("Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.");
     }
-
-    // iOS private mode uyumluluğu - safeStorage kullan
-    const saved = safeStorage.setItemLocal("kullanici", JSON.stringify(data));
-    if (!saved) {
-      setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
-      return;
-    }
-
-    if (data.rol === "merkez") {
-      router.push("/merkez-paneli");
-      return;
-    }
-
-    if (data.rol === "hemsire") {
-      router.push("/hemsire-paneli");
-      return;
-    }
-
-    setHata("Kullanıcı rolü tanımsız.");
   }
 
   return (

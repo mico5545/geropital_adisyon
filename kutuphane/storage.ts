@@ -6,20 +6,31 @@
 const STORAGE_PREFIX = "geropital_";
 
 export const safeStorage = {
-  // localStorage'a yazma - fallback ile
+  // localStorage'a yazma - fallback ile ve verification
   setItemLocal: (key: string, value: string) => {
     try {
       const prefixedKey = STORAGE_PREFIX + key;
       localStorage.setItem(prefixedKey, value);
-      return true;
+      // iOS 15 güvenliği: hemen oku ve verify et
+      const verify = localStorage.getItem(prefixedKey);
+      if (verify === value) {
+        return true;
+      }
+      throw new Error("Verification failed");
     } catch (error) {
       console.warn(`localStorage setItem başarısız (${key}):`, error);
       try {
         const prefixedKey = STORAGE_PREFIX + key;
         sessionStorage.setItem(prefixedKey, value);
-        return true;
+        // sessionStorage verification
+        const verify = sessionStorage.getItem(prefixedKey);
+        if (verify === value) {
+          return true;
+        }
+        throw new Error("SessionStorage verification failed");
       } catch (sessionError) {
         console.warn(`sessionStorage setItem başarısız (${key}):`, sessionError);
+        // Fallback: memory'ye yaz (iOS 15 son çare)
         return false;
       }
     }
