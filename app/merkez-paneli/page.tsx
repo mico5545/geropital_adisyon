@@ -64,6 +64,7 @@ type Bildirim = {
   mesaj: string | null;
   okundu: boolean;
   olusturma_tarihi: string;
+  tip?: "odeme" | "ek_hizmet" | "onay" | "yeni_kayit" | string;
 };
 
 export default function MerkezPaneli() {

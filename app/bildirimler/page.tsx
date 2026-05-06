@@ -12,11 +12,20 @@ type Bildirim = {
   mesaj: string | null;
   okundu: boolean;
   olusturma_tarihi: string;
+  tip?: "odeme" | "ek_hizmet" | "onay" | "yeni_kayit" | string;
 };
 
 export default function BildirimlerSayfasi() {
   const [bildirimler, setBildirimler] = useState<Bildirim[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
+
+  function bildirimRenk(tip?: string) {
+    if (tip === "odeme") return "bg-emerald-50 border-emerald-200";
+    if (tip === "ek_hizmet") return "bg-amber-50 border-amber-200";
+    if (tip === "onay") return "bg-blue-50 border-blue-200";
+    if (tip === "yeni_kayit") return "bg-purple-50 border-purple-200";
+    return "bg-slate-50 border-slate-200";
+  }
 
   function cikisYap() {
     localStorage.removeItem("kullanici");
@@ -102,7 +111,7 @@ export default function BildirimlerSayfasi() {
               className={`rounded-2xl sm:rounded-3xl shadow p-4 sm:p-5 border text-sm sm:text-base ${
                 bildirim.okundu
                   ? "bg-white border-slate-200"
-                  : "bg-amber-50 border-amber-200"
+                  : bildirimRenk(bildirim.tip)
               }`}
             >
               <div className="flex flex-col gap-3">
