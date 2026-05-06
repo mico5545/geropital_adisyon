@@ -5,6 +5,7 @@ import { supabase } from "@/kutuphane/supabase";
 import { safeStorage } from "@/kutuphane/storage";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -73,11 +74,17 @@ export default function MerkezPaneli() {
   const [hemsireler, setHemsireler] = useState<Kullanici[]>([]);
   const [hemsireId, setHemsireId] = useState("");
   const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
+  const [islemGecmisi, setIslemGecmisi] = useState<any[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [sonBildirimSayisi, setSonBildirimSayisi] = useState(0);
   const oncekiBildirimSayisi = useRef(0);
   const sesAktifRef = useRef(false);
-  const [sesAktif, setSesAktif] = useState(false);
+  
+  const kayitliSes =
+    typeof window !== "undefined"
+      ? localStorage.getItem("bildirim_sesi")
+      : null;
+  const [sesAktif, setSesAktif] = useState(kayitliSes === "true");
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const bildirimKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -317,6 +324,16 @@ export default function MerkezPaneli() {
     }, 5000);
   }
 
+  async function islemGecmisiGetir(kayitId: string) {
+    const { data } = await supabase
+      .from("islem_gecmisi")
+      .select("*")
+      .eq("hasta_kaydi_id", kayitId)
+      .order("olusturma_tarihi", { ascending: false });
+
+    setIslemGecmisi(data || []);
+  }
+
   function bildirimSesiCal() {
     try {
       const audioContext = new (window.AudioContext ||
@@ -329,7 +346,7 @@ export default function MerkezPaneli() {
 
       masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
       masterGain.gain.exponentialRampToValueAtTime(
-        0.45,
+        50.5,
         audioContext.currentTime + 0.08
       );
 
@@ -732,6 +749,7 @@ export default function MerkezPaneli() {
   }
 
   return (
+    <>
     <main className="min-h-screen kurumsal-arka-plan">
       <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-5">
@@ -961,7 +979,10 @@ export default function MerkezPaneli() {
                     </div>
 
                     <button
-                      onClick={() => setSeciliKayit(kayit)}
+                      onClick={() => {
+                        setSeciliKayit(kayit);
+                        islemGecmisiGetir(kayit.id);
+                      }}
                       className="w-full mt-4 kurumsal-buton py-3 rounded-xl font-bold"
                     >
                       Detayları Aç
@@ -1197,5 +1218,7 @@ export default function MerkezPaneli() {
         </div>
       )}
     </main>
+    <MobilAltMenu />
+    </>
   );
 }

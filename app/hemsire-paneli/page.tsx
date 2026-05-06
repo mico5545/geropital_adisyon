@@ -5,6 +5,7 @@ import { supabase } from "@/kutuphane/supabase";
 import { safeStorage } from "@/kutuphane/storage";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -549,6 +550,7 @@ export default function HemsirePaneli() {
   }
 
   return (
+    <>
     <main className="min-h-screen kurumsal-arka-plan">
       <KurumsalHeader
         baslik="Geropital İş Talimatı"
@@ -922,5 +924,7 @@ export default function HemsirePaneli() {
         </div>
       )}
     </main>
+    <MobilAltMenu />
+    </>
   );
 }

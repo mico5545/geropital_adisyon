@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
+import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
   id: string;
@@ -303,6 +304,7 @@ export default function GunlukSahaPlani() {
   }
 
   return (
+    <>
     <main className="min-h-screen kurumsal-arka-plan">
       <KurumsalHeader
         baslik="Günlük Saha Planı"
@@ -588,5 +590,7 @@ export default function GunlukSahaPlani() {
         </section>
       </div>
     </main>
+    <MobilAltMenu />
+    </>
   );
 }

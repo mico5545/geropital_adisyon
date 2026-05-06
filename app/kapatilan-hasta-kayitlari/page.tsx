@@ -5,6 +5,7 @@ import { supabase } from "@/kutuphane/supabase";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalNavbar from "@/bilesenler/KurumsalNavbar";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type HastaKaydi = {
   id: string;
@@ -168,6 +169,7 @@ export default function KapatilanHastaKayitlari() {
   }
 
   return (
+    <>
     <main className="min-h-screen kurumsal-arka-plan">
       <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-5">
@@ -342,5 +344,7 @@ export default function KapatilanHastaKayitlari() {
         </div>
       )}
     </main>
+    <MobilAltMenu />
+    </>
   );
 }

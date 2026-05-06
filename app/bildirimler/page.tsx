@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Bildirim = {
   id: string;
@@ -60,6 +61,7 @@ export default function BildirimlerSayfasi() {
   }
 
   return (
+    <>
     <main className="min-h-screen kurumsal-arka-plan">
       <section className="border-b border-[#144a7b]/10 py-8 lg:py-10">
         <div className="max-w-7xl mx-auto px-5">
@@ -139,5 +141,7 @@ export default function BildirimlerSayfasi() {
         </section>
       </div>
     </main>
+    <MobilAltMenu />
+    </>
   );
 }
