@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/kutuphane/supabase";
-import { safeStorage } from "@/kutuphane/storage";
+import { kullaniciOku, oturumTemizle } from "@/kutuphane/oturum";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 
@@ -92,14 +92,12 @@ export default function HemsirePaneli() {
   const kayitKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const kayitliKullanici = localStorage.getItem("kullanici");
+    const aktifKullanici = kullaniciOku();
 
-    if (!kayitliKullanici) {
+    if (!aktifKullanici) {
       window.location.href = "/giris";
       return;
     }
-
-    const aktifKullanici = JSON.parse(kayitliKullanici) as Kullanici;
 
     if (aktifKullanici.rol !== "hemsire") {
       window.location.href = "/merkez-paneli";
@@ -480,17 +478,8 @@ export default function HemsirePaneli() {
   }
 
   function cikisYap() {
-    // Session'ı tamamen temizle - geri tuşu koruması için
-    safeStorage.clear();
-    // Tüm storage'ı clear
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch (e) {
-      console.warn("Storage clear başarısız:", e);
-    }
-    // Giriş sayfasına yönlendir ve URL history'i sil
-    window.location.replace("/giris");
+    oturumTemizle();
+    window.location.href = "/giris";
   }
 
   if (yukleniyor) {

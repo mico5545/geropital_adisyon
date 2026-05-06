@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/kutuphane/supabase";
-import { safeStorage } from "@/kutuphane/storage";
+import { kullaniciKaydet } from "@/kutuphane/oturum";
 
 export default function GirisSayfasi() {
   const router = useRouter();
@@ -57,21 +57,21 @@ export default function GirisSayfasi() {
         return;
       }
 
-      localStorage.setItem("kullanici", JSON.stringify(data));
+      kullaniciKaydet(data);
 
       setTimeout(() => {
         if (data.rol === "merkez") {
-          window.location.replace("/merkez-paneli");
+          window.location.href = "/merkez-paneli";
           return;
         }
 
         if (data.rol === "hemsire") {
-          window.location.replace("/hemsire-paneli");
+          window.location.href = "/hemsire-paneli";
           return;
         }
 
         setHata("Kullanıcı rolü tanımsız.");
-      }, 100);
+      }, 300);
     } catch (err) {
       console.error("Giriş hatası:", err);
       setYukleniyor(false);

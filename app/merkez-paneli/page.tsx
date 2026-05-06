@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
-import { safeStorage } from "@/kutuphane/storage";
+import { kullaniciOku, oturumTemizle } from "@/kutuphane/oturum";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
@@ -113,14 +113,12 @@ export default function MerkezPaneli() {
   const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
-    const kayitliKullanici = localStorage.getItem("kullanici");
+    const aktifKullanici = kullaniciOku();
 
-    if (!kayitliKullanici) {
+    if (!aktifKullanici) {
       window.location.replace("/giris");
       return;
     }
-
-    const aktifKullanici = JSON.parse(kayitliKullanici);
 
     setKullanici(aktifKullanici);
 
@@ -257,8 +255,8 @@ export default function MerkezPaneli() {
     sesAktifRef.current = yeniDurum;
     setSesAktif(yeniDurum);
 
-    // iOS uyumluluğu - safeStorage kullan
-    safeStorage.setItemLocal("bildirim_sesi_aktif", String(yeniDurum));
+    // iOS uyumluluğu - localStorage kullan
+    localStorage.setItem("bildirim_sesi_aktif", String(yeniDurum));
 
     if (yeniDurum) {
       bildirimSesiCal();
@@ -684,17 +682,8 @@ export default function MerkezPaneli() {
   }
 
   function cikisYap() {
-    // Session'ı tamamen temizle - geri tuşu koruması için
-    safeStorage.clear();
-    // Tüm storage'ı clear
-    try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch (e) {
-      console.warn("Storage clear başarısız:", e);
-    }
-    // Giriş sayfasına yönlendir ve URL history'i sil
-    window.location.replace("/giris");
+    oturumTemizle();
+    window.location.href = "/giris";
   }
 
   if (yukleniyor) {
