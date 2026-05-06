@@ -86,4 +86,10 @@ export const safeStorage = {
       console.warn("sessionStorage clear başarısız:", error);
     }
   },
+
+  // Session valid mi kontrol et
+  isSessionValid: (): boolean => {
+    const kullanici = safeStorage.getItemLocal("kullanici");
+    return kullanici !== null && kullanici !== undefined && kullanici.length > 0;
+  },
 };

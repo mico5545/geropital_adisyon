@@ -108,7 +108,7 @@ export default function MerkezPaneli() {
     const kayitliKullanici = safeStorage.getItemLocal("kullanici");
 
     if (!kayitliKullanici) {
-      window.location.href = "/giris";
+      window.location.replace("/giris");
       return;
     }
 
@@ -126,16 +126,31 @@ export default function MerkezPaneli() {
 
     verileriGetir();
 
-    // Geri tuşu koruması - back button'a basılırsa session kontrol et
+    // Geri/İleri tuşu ve navigation event'leri kontrol et
     const handlePopState = () => {
-      const session = safeStorage.getItemLocal("kullanici");
-      if (!session) {
-        // Session sonlandırılmış - giriş sayfasına yönlendir
+      if (!safeStorage.isSessionValid()) {
         window.location.replace("/giris");
       }
     };
 
+    // Sayfa değişiminde session check et (beforeunload vs)
+    const handleBeforeUnload = () => {
+      // Session'ı validate et ama page unload olacak zaten
+      if (!safeStorage.isSessionValid()) {
+        return;
+      }
+    };
+
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Düzenli session validation (3 saniye interval)
+    const sessionCheckInterval = setInterval(() => {
+      if (!safeStorage.isSessionValid()) {
+        clearInterval(sessionCheckInterval);
+        window.location.replace("/giris");
+      }
+    }, 3000);
 
     const bildirimKontrol = setInterval(async () => {
       const { data, error } = await supabase
@@ -165,7 +180,9 @@ export default function MerkezPaneli() {
 
     return () => {
       clearInterval(bildirimKontrol);
+      clearInterval(sessionCheckInterval);
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 

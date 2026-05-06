@@ -107,21 +107,37 @@ export default function HemsirePaneli() {
 
     setKullanici(aktifKullanici);
 
-    // Geri tuşu koruması - back button'a basılırsa session kontrol et
+    // Geri/İleri tuşu ve navigation event'leri kontrol et
     const handlePopState = () => {
-      const session = safeStorage.getItemLocal("kullanici");
-      if (!session) {
-        // Session sonlandırılmış - giriş sayfasına yönlendir
+      if (!safeStorage.isSessionValid()) {
         window.location.replace("/giris");
       }
     };
 
+    // Sayfa değişiminde session check et
+    const handleBeforeUnload = () => {
+      if (!safeStorage.isSessionValid()) {
+        return;
+      }
+    };
+
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Düzenli session validation (3 saniye interval)
+    const sessionCheckInterval = setInterval(() => {
+      if (!safeStorage.isSessionValid()) {
+        clearInterval(sessionCheckInterval);
+        window.location.replace("/giris");
+      }
+    }, 3000);
 
     verileriGetir(aktifKullanici.id);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      clearInterval(sessionCheckInterval);
     };
   }, []);
 
