@@ -95,7 +95,11 @@ export default function KapatilanHastaKayitlari() {
     }
 
     setKayitlar((data as HastaKaydi[]) || []);
-    setYukleniyor(false);
+    
+    // 2 saniye loading göster
+    setTimeout(() => {
+      setYukleniyor(false);
+    }, 2000);
   }
 
   async function kaydiKaliciSil(kayitId: string) {
@@ -226,7 +230,7 @@ export default function KapatilanHastaKayitlari() {
           { href: "/gunluk-saha-plani", label: "G\u00fcnl\u00fck Saha Plan\u0131" },
           { href: "/hizmet-yonetimi", label: "Hizmet Y\u00f6netimi" },
           { href: "/bildirimler", label: "Bildirimler" },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kaapat\u0131lan Kay\u0131tlar" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Arşiv" },
 
         ]}
       />

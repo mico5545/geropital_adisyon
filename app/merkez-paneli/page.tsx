@@ -765,7 +765,7 @@ export default function MerkezPaneli() {
           { href: "/gunluk-saha-plani", label: "Günlük Saha Planı" },
           { href: "/hizmet-yonetimi", label: "Hizmet Yönetimi" },
           { href: "/bildirimler", label: `Bildirimler (${bildirimler.length})` },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kapatılan Kayıtlar" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Arşiv" },
         ]}
         sagAlan={
           <div className="flex gap-3">

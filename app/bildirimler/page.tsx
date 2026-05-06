@@ -85,7 +85,7 @@ export default function BildirimlerSayfasi() {
           { href: "/gunluk-saha-plani", label: "Günlük Saha Planı" },
           { href: "/hizmet-yonetimi", label: "Hizmet Yönetimi" },
           { href: "/bildirimler", label: "Bildirimler" },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kapatılan Kayıtlar" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Arşiv" },
         ]}
         sagAlan={
           <button

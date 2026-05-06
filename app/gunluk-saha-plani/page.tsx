@@ -314,7 +314,7 @@ export default function GunlukSahaPlani() {
           { href: "/gunluk-saha-plani", label: "Günlük Saha Planı", vurgu: "ana" },
           { href: "/hizmet-yonetimi", label: "Hizmet Yönetimi" },
           { href: "/bildirimler", label: "Bildirimler" },
-          { href: "/kapatilan-hasta-kayitlari", label: "Kapatılan Kayıtlar" },
+          { href: "/kapatilan-hasta-kayitlari", label: "Arşiv" },
         ]}
         sagAlan={
           <button
