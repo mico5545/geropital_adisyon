@@ -106,7 +106,23 @@ export default function HemsirePaneli() {
     }
 
     setKullanici(aktifKullanici);
+
+    // Geri tuşu koruması - back button'a basılırsa session kontrol et
+    const handlePopState = () => {
+      const session = safeStorage.getItemLocal("kullanici");
+      if (!session) {
+        // Session sonlandırılmış - giriş sayfasına yönlendir
+        window.location.replace("/giris");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
     verileriGetir(aktifKullanici.id);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   async function verileriGetir(hemsireId?: string) {
@@ -470,8 +486,17 @@ export default function HemsirePaneli() {
   }
 
   function cikisYap() {
-    safeStorage.removeItemLocal("kullanici");
-    window.location.href = "/giris";
+    // Session'ı tamamen temizle - geri tuşu koruması için
+    safeStorage.clear();
+    // Tüm storage'ı clear
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn("Storage clear başarısız:", e);
+    }
+    // Giriş sayfasına yönlendir ve URL history'i sil
+    window.location.replace("/giris");
   }
 
   if (yukleniyor) {
