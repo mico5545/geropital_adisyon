@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import { safeStorage } from "@/kutuphane/storage";
 import Yukleniyor from "@/bilesenler/Yukleniyor";
@@ -89,6 +89,9 @@ export default function HemsirePaneli() {
   const [odemeAciklama, setOdemeAciklama] = useState("");
   const [hemsireNotu, setHemsireNotu] = useState("");
 
+  const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const kayitKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     // safeStorage kullan (iOS uyumluluğu)
     const kayitliKullanici = safeStorage.getItemLocal("kullanici");
@@ -109,11 +112,27 @@ export default function HemsirePaneli() {
 
     // Geri/İleri tuşu ve navigation event'leri kontrol et
     const handlePopState = () => {
-      // Geri tuşa basılınca otomatik logout et
+      // Tüm interval'ları hemen temizle
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current);
+        sessionCheckIntervalRef.current = null;
+      }
+      if (kayitKontrolIntervalRef.current) {
+        clearInterval(kayitKontrolIntervalRef.current);
+        kayitKontrolIntervalRef.current = null;
+      }
+
+      // Event listener'ları sil
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Session'ı temizle
       safeStorage.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace("/giris");
+
+      // Soft navigation - replace yerine href kullan
+      window.location.href = "/giris";
     };
 
     // Sayfa değişiminde session check et
@@ -127,9 +146,12 @@ export default function HemsirePaneli() {
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     // Düzenli session validation (3 saniye interval)
-    const sessionCheckInterval = setInterval(() => {
+    sessionCheckIntervalRef.current = setInterval(() => {
       if (!safeStorage.isSessionValid()) {
-        clearInterval(sessionCheckInterval);
+        if (sessionCheckIntervalRef.current) {
+          clearInterval(sessionCheckIntervalRef.current);
+          sessionCheckIntervalRef.current = null;
+        }
         window.location.replace("/giris");
       }
     }, 3000);
@@ -137,9 +159,14 @@ export default function HemsirePaneli() {
     verileriGetir(aktifKullanici.id);
 
     return () => {
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current);
+      }
+      if (kayitKontrolIntervalRef.current) {
+        clearInterval(kayitKontrolIntervalRef.current);
+      }
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      clearInterval(sessionCheckInterval);
     };
   }, []);
 

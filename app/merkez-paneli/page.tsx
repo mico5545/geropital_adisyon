@@ -78,6 +78,8 @@ export default function MerkezPaneli() {
   const oncekiBildirimSayisi = useRef(0);
   const sesAktifRef = useRef(false);
   const [sesAktif, setSesAktif] = useState(false);
+  const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const bildirimKontrolIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [hastaAdi, setHastaAdi] = useState("");
   const [hastaTelefon, setHastaTelefon] = useState("");
@@ -128,11 +130,27 @@ export default function MerkezPaneli() {
 
     // Geri/İleri tuşu ve navigation event'leri kontrol et
     const handlePopState = () => {
-      // Geri tuşa basılınca otomatik logout et
+      // Tüm interval'ları hemen temizle
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current);
+        sessionCheckIntervalRef.current = null;
+      }
+      if (bildirimKontrolIntervalRef.current) {
+        clearInterval(bildirimKontrolIntervalRef.current);
+        bildirimKontrolIntervalRef.current = null;
+      }
+
+      // Event listener'ları sil
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Session'ı temizle
       safeStorage.clear();
       localStorage.clear();
       sessionStorage.clear();
-      window.location.replace("/giris");
+
+      // Soft navigation - replace yerine href kullan
+      window.location.href = "/giris";
     };
 
     // Sayfa değişiminde session check et (beforeunload vs)
@@ -147,14 +165,17 @@ export default function MerkezPaneli() {
     window.addEventListener("beforeunload", handleBeforeUnload);
 
     // Düzenli session validation (3 saniye interval)
-    const sessionCheckInterval = setInterval(() => {
+    sessionCheckIntervalRef.current = setInterval(() => {
       if (!safeStorage.isSessionValid()) {
-        clearInterval(sessionCheckInterval);
+        if (sessionCheckIntervalRef.current) {
+          clearInterval(sessionCheckIntervalRef.current);
+          sessionCheckIntervalRef.current = null;
+        }
         window.location.replace("/giris");
       }
     }, 3000);
 
-    const bildirimKontrol = setInterval(async () => {
+    bildirimKontrolIntervalRef.current = setInterval(async () => {
       const { data, error } = await supabase
         .from("bildirimler")
         .select("id")
@@ -181,8 +202,12 @@ export default function MerkezPaneli() {
     }, 3000);
 
     return () => {
-      clearInterval(bildirimKontrol);
-      clearInterval(sessionCheckInterval);
+      if (sessionCheckIntervalRef.current) {
+        clearInterval(sessionCheckIntervalRef.current);
+      }
+      if (bildirimKontrolIntervalRef.current) {
+        clearInterval(bildirimKontrolIntervalRef.current);
+      }
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
@@ -304,7 +329,7 @@ export default function MerkezPaneli() {
 
       masterGain.gain.setValueAtTime(0.0001, audioContext.currentTime);
       masterGain.gain.exponentialRampToValueAtTime(
-        0.18,
+        0.45,
         audioContext.currentTime + 0.08
       );
 
@@ -323,7 +348,7 @@ export default function MerkezPaneli() {
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
 
-        osc.type = "sine";
+        osc.type = "triangle";
 
         osc.frequency.setValueAtTime(
           nota.freq,
@@ -336,7 +361,7 @@ export default function MerkezPaneli() {
         );
 
         gain.gain.exponentialRampToValueAtTime(
-          0.12,
+          0.28,
           audioContext.currentTime + nota.start + 0.04
         );
 
