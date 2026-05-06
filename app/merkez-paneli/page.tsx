@@ -5,6 +5,7 @@ import { supabase } from "@/kutuphane/supabase";
 import { safeStorage } from "@/kutuphane/storage";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Kullanici = {
@@ -749,6 +750,10 @@ export default function MerkezPaneli() {
     }
     // Giriş sayfasına yönlendir ve URL history'i sil
     window.location.replace("/giris");
+  }
+
+  if (yukleniyor) {
+    return <Yukleniyor />;
   }
 
   return (

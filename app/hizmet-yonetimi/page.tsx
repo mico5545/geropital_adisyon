@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 
 type Hizmet = {
   id: string;
@@ -122,6 +123,10 @@ export default function HizmetYonetimi() {
     }
 
     await hizmetleriGetir();
+  }
+
+  if (yukleniyor) {
+    return <Yukleniyor />;
   }
 
   return (

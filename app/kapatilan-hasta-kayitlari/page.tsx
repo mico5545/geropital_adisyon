@@ -5,6 +5,7 @@ import { supabase } from "@/kutuphane/supabase";
 import KurumsalLogo from "@/bilesenler/KurumsalLogo";
 import KurumsalNavbar from "@/bilesenler/KurumsalNavbar";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type HastaKaydi = {
@@ -212,6 +213,10 @@ export default function KapatilanHastaKayitlari() {
 
   function yazdir() {
     window.print();
+  }
+
+  if (yukleniyor) {
+    return <Yukleniyor />;
   }
 
   return (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/kutuphane/supabase";
 import KurumsalHeader from "@/bilesenler/KurumsalHeader";
+import Yukleniyor from "@/bilesenler/Yukleniyor";
 import MobilAltMenu from "@/bilesenler/MobilAltMenu";
 
 type Bildirim = {
@@ -70,6 +71,10 @@ export default function BildirimlerSayfasi() {
 
   function tarihFormatla(tarih: string) {
     return new Date(tarih).toLocaleString("tr-TR");
+  }
+
+  if (yukleniyor) {
+    return <Yukleniyor />;
   }
 
   return (
