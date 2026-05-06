@@ -584,7 +584,7 @@ export default function MerkezPaneli() {
     await verileriGetir();
   }
 
-  async function merkezOnayiVer(kayitId: string) {
+  async function merkezOnayiVer(kayitId: string, bildirimId?: string) {
     const { error } = await supabase
       .from("hasta_kayitlari")
       .update({ durum: "Aktif" })
@@ -596,13 +596,15 @@ export default function MerkezPaneli() {
       return;
     }
 
-    await supabase
-      .from("bildirimler")
-      .update({ okundu: true })
-      .eq("hasta_kaydi_id", kayitId);
+    if (bildirimId) {
+      await supabase
+        .from("bildirimler")
+        .update({ okundu: true })
+        .eq("id", bildirimId);
+    }
 
     await verileriGetir();
-    alert("Merkez onayı verildi.");
+    alert("Seçili bildirim onaylandı.");
   }
 
   async function hastaKaydiKapat(kayitId: string) {
@@ -694,7 +696,7 @@ export default function MerkezPaneli() {
                   </div>
 
                   <button
-                    onClick={() => merkezOnayiVer(bildirim.hasta_kaydi_id)}
+                    onClick={() => merkezOnayiVer(bildirim.hasta_kaydi_id, bildirim.id)}
                     className="kurumsal-buton px-5 py-2 rounded-xl font-bold text-sm flex-shrink-0"
                   >
                     Onayla
