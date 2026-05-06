@@ -109,9 +109,11 @@ export default function HemsirePaneli() {
 
     // Geri/İleri tuşu ve navigation event'leri kontrol et
     const handlePopState = () => {
-      if (!safeStorage.isSessionValid()) {
-        window.location.replace("/giris");
-      }
+      // Geri tuşa basılınca otomatik logout et
+      safeStorage.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/giris");
     };
 
     // Sayfa değişiminde session check et
