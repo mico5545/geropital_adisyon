@@ -245,7 +245,7 @@ export default function HemsirePaneli() {
 
     setTimeout(() => {
       setYukleniyor(false);
-    }, 2000);
+    }, 1000);
   }
 
   function hastaBilgisiGetir(kayit: HastaKaydi) {

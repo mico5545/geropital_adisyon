@@ -78,8 +78,8 @@ export default function GirisSayfasi() {
         return;
       }
 
-      // 2 saniye loading göster sonra panele yönlendir
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // 1 saniye loading göster sonra panele yönlendir
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (data.rol === "merkez") {
         // window.location yerine router.push (SPA optimization)

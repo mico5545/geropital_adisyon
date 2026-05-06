@@ -52,7 +52,7 @@ export default function HizmetYonetimi() {
     
     setTimeout(() => {
       setYukleniyor(false);
-    }, 2000);
+    }, 1000);
   }
 
   async function hizmetEkle(e: React.FormEvent<HTMLFormElement>) {

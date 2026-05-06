@@ -302,7 +302,7 @@ export default function MerkezPaneli() {
 
     setTimeout(() => {
       setYukleniyor(false);
-    }, 2000);
+    }, 1000);
   }
 
   function bildirimSesiniAktifEt() {

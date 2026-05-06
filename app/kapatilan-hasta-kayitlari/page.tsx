@@ -96,10 +96,10 @@ export default function KapatilanHastaKayitlari() {
 
     setKayitlar((data as HastaKaydi[]) || []);
     
-    // 2 saniye loading göster
+    // 1 saniye loading göster
     setTimeout(() => {
       setYukleniyor(false);
-    }, 2000);
+    }, 1000);
   }
 
   async function kaydiKaliciSil(kayitId: string) {

@@ -55,7 +55,7 @@ export default function BildirimlerSayfasi() {
     
     setTimeout(() => {
       setYukleniyor(false);
-    }, 2000);
+    }, 1000);
   }
 
   async function okunduYap(id: string) {
