@@ -243,7 +243,9 @@ export default function HemsirePaneli() {
     setKapatilanKayitlar((kapaliData as unknown as HastaKaydi[]) || []);
     setHizmetler((hizmetData as Hizmet[]) || []);
 
-    setYukleniyor(false);
+    setTimeout(() => {
+      setYukleniyor(false);
+    }, 2000);
   }
 
   function hastaBilgisiGetir(kayit: HastaKaydi) {

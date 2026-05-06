@@ -52,7 +52,10 @@ export default function BildirimlerSayfasi() {
     }
 
     setBildirimler((data as Bildirim[]) || []);
-    setYukleniyor(false);
+    
+    setTimeout(() => {
+      setYukleniyor(false);
+    }, 2000);
   }
 
   async function okunduYap(id: string) {

@@ -300,7 +300,9 @@ export default function MerkezPaneli() {
       }
     }
 
-    setYukleniyor(false);
+    setTimeout(() => {
+      setYukleniyor(false);
+    }, 2000);
   }
 
   function bildirimSesiniAktifEt() {

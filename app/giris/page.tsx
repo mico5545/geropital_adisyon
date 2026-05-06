@@ -50,9 +50,9 @@ export default function GirisSayfasi() {
         .single();
 
       clearTimeout(timeoutId);
-      setYukleniyor(false);
 
       if (error || !data) {
+        setYukleniyor(false);
         setHata("Kullanıcı adı veya şifre hatalı.");
         return;
       }
@@ -62,6 +62,7 @@ export default function GirisSayfasi() {
       const saved = safeStorage.setItemLocal("kullanici", kullaniciJson);
       
       if (!saved) {
+        setYukleniyor(false);
         setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
         return;
       }
@@ -72,9 +73,13 @@ export default function GirisSayfasi() {
       // Session'ı verify et
       const verify = safeStorage.getItemLocal("kullanici");
       if (!verify) {
+        setYukleniyor(false);
         setHata("Session kaydı başarısız. Lütfen tekrar deneyin.");
         return;
       }
+
+      // 2 saniye loading göster sonra panele yönlendir
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       if (data.rol === "merkez") {
         // window.location yerine router.push (SPA optimization)
@@ -87,6 +92,7 @@ export default function GirisSayfasi() {
         return;
       }
 
+      setYukleniyor(false);
       setHata("Kullanıcı rolü tanımsız.");
     } catch (err) {
       console.error("Giriş hatası:", err);

@@ -138,7 +138,10 @@ export default function GunlukSahaPlani() {
     setKayitlar((kayitData as unknown as Kayit[]) || []);
     setHemsireler((hemsireData as Kullanici[]) || []);
     setHizmetler((hizmetData as Hizmet[]) || []);
-    setYukleniyor(false);
+    
+    setTimeout(() => {
+      setYukleniyor(false);
+    }, 2000);
   }
 
   function hizmetSecimiDegistir(hizmetId: string) {
