@@ -41,6 +41,10 @@ export default function KapatilanHastaKayitlari() {
   const [kayitlar, setKayitlar] = useState<HastaKaydi[]>([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [seciliKayit, setSeciliKayit] = useState<HastaKaydi | null>(null);
+  
+  const [arama, setArama] = useState("");
+  const [baslangic, setBaslangic] = useState("");
+  const [bitis, setBitis] = useState("");
 
   useEffect(() => {
     verileriGetir();
@@ -141,6 +145,34 @@ export default function KapatilanHastaKayitlari() {
     return hasta?.adres || "Adres yok";
   }
 
+  function filtreliKayitlariGetir() {
+    let sonuc = kayitlar;
+
+    // Arama filtresi
+    if (arama) {
+      sonuc = sonuc.filter((k) =>
+        hastaAdiGetir(k).toLowerCase().includes(arama.toLowerCase())
+      );
+    }
+
+    // Tarih filtresi
+    if (baslangic) {
+      sonuc = sonuc.filter((k) => {
+        const kapanisTarihi = new Date(k.kapanis_tarihi || "").toISOString().split("T")[0];
+        return kapanisTarihi >= baslangic;
+      });
+    }
+
+    if (bitis) {
+      sonuc = sonuc.filter((k) => {
+        const kapanisTarihi = new Date(k.kapanis_tarihi || "").toISOString().split("T")[0];
+        return kapanisTarihi <= bitis;
+      });
+    }
+
+    return sonuc;
+  }
+
   function tarihSaatFormatla(tarih: string | null) {
     if (!tarih) return "-";
 
@@ -190,13 +222,41 @@ export default function KapatilanHastaKayitlari() {
       />
 
       <div className="max-w-7xl mx-auto p-3 sm:p-5">
+        <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-5">
+          <h3 className="font-black mb-3">Filtrele</h3>
+          <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-3">
+            <input
+              value={arama}
+              onChange={(e) => setArama(e.target.value)}
+              placeholder="Hasta adı ara..."
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+            />
+
+            <input
+              type="date"
+              value={baslangic}
+              onChange={(e) => setBaslangic(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+              title="Başlangıç tarihi"
+            />
+
+            <input
+              type="date"
+              value={bitis}
+              onChange={(e) => setBitis(e.target.value)}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-slate-900"
+              title="Bitiş tarihi"
+            />
+          </div>
+        </section>
+
         <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6">
-          {kayitlar.length === 0 && (
-            <p className="text-slate-500">Kapatılan hasta kaydı bulunmuyor.</p>
+          {filtreliKayitlariGetir().length === 0 && (
+            <p className="text-slate-500">Kayıt bulunmuyor.</p>
           )}
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {kayitlar.map((kayit) => (
+            {filtreliKayitlariGetir().map((kayit) => (
               <div key={kayit.id} className="border border-slate-200 rounded-2xl p-5">
                 <h2 className="text-xl font-black text-slate-900">
                   {hastaAdiGetir(kayit)}
