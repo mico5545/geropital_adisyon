@@ -1,17 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/kutuphane/supabase";
-import { safeStorage } from "@/kutuphane/storage";
 
 export default function GirisSayfasi() {
-  const router = useRouter();
-
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
   const [hata, setHata] = useState("");
   const [yukleniyor, setYukleniyor] = useState(false);
+
+  function guvenliYonlendir(rol: string) {
+    if (rol === "merkez") {
+      window.location.replace("/merkez-paneli");
+      return;
+    }
+
+    if (rol === "hemsire") {
+      window.location.replace("/hemsire-paneli");
+      return;
+    }
+
+    setHata("Kullanıcı rolü tanımsız.");
+  }
 
   async function girisYap(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,11 +29,14 @@ export default function GirisSayfasi() {
     setHata("");
     setYukleniyor(true);
 
+    const temizKullaniciAdi = kullaniciAdi.trim();
+    const temizSifre = sifre.trim();
+
     const { data, error } = await supabase
       .from("kullanicilar")
       .select("*")
-      .eq("kullanici_adi", kullaniciAdi.trim())
-      .eq("sifre", sifre.trim())
+      .eq("kullanici_adi", temizKullaniciAdi)
+      .eq("sifre", temizSifre)
       .eq("aktif", true)
       .single();
 
@@ -34,63 +47,57 @@ export default function GirisSayfasi() {
       return;
     }
 
-    // iOS private mode uyumluluğu - safeStorage kullan
-    const saved = safeStorage.setItemLocal("kullanici", JSON.stringify(data));
-    if (!saved) {
-      setHata("Veri kaydı başarısız. Lütfen tarayıcı ayarlarını kontrol et.");
+    try {
+      localStorage.setItem("kullanici", JSON.stringify(data));
+    } catch {
+      setHata("Tarayıcı oturum bilgisi kaydedemedi. Safari ayarlarını kontrol edin.");
       return;
     }
 
-    if (data.rol === "merkez") {
-      router.push("/merkez-paneli");
-      return;
-    }
-
-    if (data.rol === "hemsire") {
-      router.push("/hemsire-paneli");
-      return;
-    }
-
-    setHata("Kullanıcı rolü tanımsız.");
+    setTimeout(() => {
+      guvenliYonlendir(data.rol);
+    }, 100);
   }
 
   return (
-    <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-md kurumsal-kart rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-        <div className="flex justify-center mb-3 sm:mb-5">
+    <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-5">
+      <div className="w-full max-w-md kurumsal-kart rounded-3xl p-8">
+        <div className="flex justify-center mb-5">
           <img
             src="/logo-geropital.png"
             alt="Geropital"
-            className="h-14 sm:h-16 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-black text-[#144a7b] text-center">
+        <h1 className="text-3xl font-black text-[#144a7b] text-center">
           Geropital İş Talimatı
         </h1>
 
-        <p className="text-xs sm:text-sm text-slate-600 text-center mt-2">
+        <p className="text-slate-600 text-center mt-2">
           Merkez ve hemşire giriş ekranı
         </p>
 
-        <form onSubmit={girisYap} className="space-y-3 mt-6 sm:mt-8">
+        <form onSubmit={girisYap} className="space-y-4 mt-8">
           <input
             value={kullaniciAdi}
             onChange={(e) => setKullaniciAdi(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             placeholder="Kullanıcı adı"
+            autoComplete="username"
           />
 
           <input
             type="password"
             value={sifre}
             onChange={(e) => setSifre(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             placeholder="Şifre"
+            autoComplete="current-password"
           />
 
           {hata && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xs sm:text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
               {hata}
             </div>
           )}
@@ -98,7 +105,7 @@ export default function GirisSayfasi() {
           <button
             type="submit"
             disabled={yukleniyor}
-            className="w-full kurumsal-buton rounded-lg sm:rounded-xl py-2 sm:py-3 font-black text-sm"
+            className="w-full kurumsal-buton rounded-xl py-3 font-black"
           >
             {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
           </button>
