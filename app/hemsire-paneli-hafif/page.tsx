@@ -66,17 +66,29 @@ export default function HemsirePaneliHafif() {
 
   useEffect(() => {
     async function baslat() {
+      console.log("🔑 Hemşire Paneli Başlatılıyor...");
+      
       let aktifKullanici = kullaniciOku();
+      console.log("💾 localStorage'dan Okunan Kullanıcı:", aktifKullanici?.ad_soyad || "YOK");
 
       if (!aktifKullanici) {
+        console.log("⚠️ localStorage'da Kullanıcı Yok, URL'den Aranıyor...");
+        
         const arama = window.location.search || "";
+        console.log("🔗 URL Parametreleri:", arama);
+        
         const eslesen = arama.match(/kullaniciId=([^&]+)/);
         const kullaniciId = eslesen ? decodeURIComponent(eslesen[1]) : "";
 
+        console.log("🆔 Çıkarılan Kullanıcı ID:", kullaniciId);
+
         if (!kullaniciId) {
+          console.log("❌ Kullanıcı ID Boş, Giriş Sayfasına Yönlendiriliyor...");
           window.location.href = "/giris";
           return;
         }
+
+        console.log("🔍 Veritabanından Kullanıcı Aranıyor...");
 
         const { data, error } = await supabase
           .from("kullanicilar")
@@ -85,19 +97,27 @@ export default function HemsirePaneliHafif() {
           .eq("aktif", true)
           .single();
 
+        if (error) {
+          console.log("❌ Supabase Hatası:", error);
+        }
+
         if (error || !data) {
+          console.log("❌ Kullanıcı Bulunamadı, Giriş Sayfasına Yönlendiriliyor...");
           window.location.href = "/giris";
           return;
         }
 
+        console.log("✅ Veritabanından Kullanıcı Bulundu:", data.ad_soyad);
         aktifKullanici = data;
       }
 
       if (aktifKullanici.rol !== "hemsire") {
+        console.log("❌ Rol Hemşire Değil:", aktifKullanici.rol);
         window.location.href = "/merkez-paneli";
         return;
       }
 
+      console.log("✅ Hemşire Onaylandı:", aktifKullanici.ad_soyad);
       setKullanici(aktifKullanici);
       verileriGetir(aktifKullanici.id);
     }

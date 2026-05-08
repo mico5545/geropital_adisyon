@@ -39,6 +39,8 @@ export default function GirisSayfasi() {
         encodeURIComponent(sifreDegeri) +
         "&aktif=eq.true";
 
+      console.log("📡 API İsteği Başlıyor:", adres);
+
       const istek = new XMLHttpRequest();
 
       istek.open("GET", adres, true);
@@ -47,25 +49,33 @@ export default function GirisSayfasi() {
       istek.setRequestHeader("Content-Type", "application/json");
 
       istek.onload = function () {
+        console.log("📩 API Yanıt Status:", istek.status);
+        
         if (istek.status >= 200 && istek.status < 300) {
           try {
             const sonuc = JSON.parse(istek.responseText);
+            console.log("✅ API Yanıtı Başarılı:", sonuc);
 
             if (Array.isArray(sonuc) && sonuc.length > 0) {
+              console.log("👤 Kullanıcı Bulundu:", sonuc[0].ad_soyad, "Rol:", sonuc[0].rol);
               resolve(sonuc[0]);
               return;
             }
 
+            console.log("❌ Sonuç Boş veya Array Değil");
             resolve(null);
-          } catch {
+          } catch (e) {
+            console.log("❌ JSON Parse Hatası:", e);
             resolve(null);
           }
         } else {
+          console.log("❌ API Hatası Status:", istek.status, "Yanıt:", istek.responseText);
           resolve(null);
         }
       };
 
       istek.onerror = function () {
+        console.log("❌ Network Hatası");
         resolve(null);
       };
 
@@ -74,20 +84,31 @@ export default function GirisSayfasi() {
   }
 
   function paneleYonlendir(kullanici: Kullanici) {
+    console.log("🔐 Kullanıcı Oturumu Kaydediliyor:", kullanici.ad_soyad);
+    
     try {
       kullaniciKaydet(kullanici);
-    } catch {}
+      console.log("✅ localStorage'a yazıldı");
+      console.log("✅ Cookie'ye yazıldı");
+    } catch (e) {
+      console.log("⚠️ Storage Hatası:", e);
+    }
+
+    console.log("🎯 Rol:", kullanici.rol);
 
     if (kullanici.rol === "merkez") {
+      console.log("➡️ Merkez Paneline Yönlendiriliyor...");
       window.location.href = "/merkez-paneli?kullaniciId=" + kullanici.id;
       return;
     }
 
     if (kullanici.rol === "hemsire") {
+      console.log("➡️ Hemşire Paneline Yönlendiriliyor (Hafif Versiyon)...");
       window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + kullanici.id;
       return;
     }
 
+    console.log("❌ Bilinmeyen Rol:", kullanici.rol);
     setHata("Kullanıcı rolü tanımsız.");
   }
 
@@ -95,15 +116,18 @@ export default function GirisSayfasi() {
     if (yukleniyor) return;
 
     setHata("");
+    console.log("🔑 Giriş Denemesi Başladı");
 
     const temizKullaniciAdi = kullaniciAdi.trim();
     const temizSifre = sifre.trim();
 
     if (!temizKullaniciAdi || !temizSifre) {
+      console.log("⚠️ Boş Alan - Kullanıcı Adı:", temizKullaniciAdi, "Şifre:", temizSifre);
       setHata("Kullanıcı adı ve şifre zorunludur.");
       return;
     }
 
+    console.log("📝 Kullanıcı Adı:", temizKullaniciAdi);
     setYukleniyor(true);
 
     const kullanici = await eskiUyumluKullaniciSorgula(
@@ -114,10 +138,12 @@ export default function GirisSayfasi() {
     setYukleniyor(false);
 
     if (!kullanici) {
+      console.log("❌ Kullanıcı Bulunamadı veya Şifre Hatalı");
       setHata("Kullanıcı adı veya şifre hatalı.");
       return;
     }
 
+    console.log("✅ Giriş Başarılı");
     paneleYonlendir(kullanici);
   }
 
