@@ -113,50 +113,99 @@ export default function MerkezPaneli() {
   const [duzenleHizmetAciklama, setDuzenleHizmetAciklama] = useState("");
 
   useEffect(() => {
-    const aktifKullanici = kullaniciOku();
+    async function baslat() {
+      console.log("🏢 Merkez Paneli Başlatılıyor...");
+      
+      let aktifKullanici = kullaniciOku();
+      console.log("💾 localStorage'dan Okunan Kullanıcı:", aktifKullanici?.ad_soyad || "YOK");
 
-    if (!aktifKullanici) {
-      window.location.replace("/giris");
-      return;
-    }
+      if (!aktifKullanici) {
+        console.log("⚠️ localStorage'da Kullanıcı Yok, URL'den Aranıyor...");
+        
+        const arama = window.location.search || "";
+        console.log("🔗 URL Parametreleri:", arama);
+        
+        const eslesen = arama.match(/kullaniciId=([^&]+)/);
+        const kullaniciId = eslesen ? decodeURIComponent(eslesen[1]) : "";
 
-    setKullanici(aktifKullanici);
+        console.log("🆔 Çıkarılan Kullanıcı ID:", kullaniciId);
 
-    // Ses durumu kontrol et
-    const kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
+        if (!kullaniciId) {
+          console.log("❌ Kullanıcı ID Boş, Giriş Sayfasına Yönlendiriliyor...");
+          window.location.replace("/giris");
+          return;
+        }
 
-    if (kayitliSesDurumu === "true") {
-      sesAktifRef.current = true;
-      setSesAktif(true);
-    }
+        console.log("🔍 Veritabanından Kullanıcı Aranıyor...");
 
-    verileriGetir();
+        const { data, error } = await supabase
+          .from("kullanicilar")
+          .select("*")
+          .eq("id", kullaniciId)
+          .eq("aktif", true)
+          .single();
 
-    bildirimKontrolIntervalRef.current = setInterval(async () => {
-      const { data, error } = await supabase
-        .from("bildirimler")
-        .select("id")
-        .eq("okundu", false);
+        if (error) {
+          console.log("❌ Supabase Hatası:", error);
+        }
 
-      if (error) {
-        console.log("Bildirim kontrol hatası:", error);
+        if (error || !data) {
+          console.log("❌ Kullanıcı Bulunamadı, Giriş Sayfasına Yönlendiriliyor...");
+          window.location.replace("/giris");
+          return;
+        }
+
+        console.log("✅ Veritabanından Kullanıcı Bulundu:", data.ad_soyad);
+        aktifKullanici = data;
+      }
+
+      if (aktifKullanici.rol !== "merkez") {
+        console.log("❌ Rol Merkez Değil:", aktifKullanici.rol);
+        window.location.href = "/hemsire-paneli";
         return;
       }
 
-      const yeniBildirimSayisi = data?.length || 0;
+      console.log("✅ Merkez Onaylandı:", aktifKullanici.ad_soyad);
+      setKullanici(aktifKullanici);
 
-      if (
-        sesAktifRef.current &&
-        oncekiBildirimSayisi.current > 0 &&
-        yeniBildirimSayisi > oncekiBildirimSayisi.current
-      ) {
-        bildirimSesiCal();
-        toastGoster("Yeni hemşire bildirimi geldi. Kontrol etmeniz gerekiyor.");
-        await verileriGetir();
+      // Ses durumu kontrol et
+      const kayitliSesDurumu = localStorage.getItem("bildirim_sesi_aktif");
+
+      if (kayitliSesDurumu === "true") {
+        sesAktifRef.current = true;
+        setSesAktif(true);
       }
 
-      oncekiBildirimSayisi.current = yeniBildirimSayisi;
-    }, 3000);
+      verileriGetir();
+
+      bildirimKontrolIntervalRef.current = setInterval(async () => {
+        const { data, error } = await supabase
+          .from("bildirimler")
+          .select("id")
+          .eq("okundu", false);
+
+        if (error) {
+          console.log("Bildirim kontrol hatası:", error);
+          return;
+        }
+
+        const yeniBildirimSayisi = data?.length || 0;
+
+        if (
+          sesAktifRef.current &&
+          oncekiBildirimSayisi.current > 0 &&
+          yeniBildirimSayisi > oncekiBildirimSayisi.current
+        ) {
+          bildirimSesiCal();
+          toastGoster("Yeni hemşire bildirimi geldi. Kontrol etmeniz gerekiyor.");
+          await verileriGetir();
+        }
+
+        oncekiBildirimSayisi.current = yeniBildirimSayisi;
+      }, 3000);
+    }
+
+    baslat();
 
     return () => {
       if (bildirimKontrolIntervalRef.current) {
