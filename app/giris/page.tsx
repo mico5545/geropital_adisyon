@@ -1,151 +1,190 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/kutuphane/supabase";
+import { useState } from "react";
 import { kullaniciKaydet } from "@/kutuphane/oturum";
 
-export default function GirisSayfasi() {
-  const router = useRouter();
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://bagdpvuujltcysniukry.supabase.co";
 
+const SUPABASE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhZ2RwdnV1dWpsdGN5c25pdWtyeSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzA3NDc5MDAwLCJleHAiOjE4OTUxOTgwMDB9.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+
+type Kullanici = {
+  id: string;
+  kullanici_adi: string;
+  sifre: string;
+  ad_soyad: string;
+  rol: "merkez" | "hemsire";
+  aktif: boolean;
+};
+
+export default function GirisSayfasi() {
   const [kullaniciAdi, setKullaniciAdi] = useState("");
   const [sifre, setSifre] = useState("");
   const [hata, setHata] = useState("");
   const [yukleniyor, setYukleniyor] = useState(false);
 
-  useEffect(() => {
-    // Zaten login'se, giriş sayfasını gösterme - paneline yönlendir
-    const kayitliKullanici = localStorage.getItem("kullanici");
-    if (kayitliKullanici) {
-      try {
-        const kullanici = JSON.parse(kayitliKullanici);
-        if (kullanici.rol === "merkez") {
-          router.push("/merkez-paneli");
-        } else if (kullanici.rol === "hemsire") {
-          router.push("/hemsire-paneli");
-        }
-      } catch (e) {
-        console.warn("Kullanıcı parse hatası:", e);
-      }
-    }
-  }, [router]);
+  function eskiUyumluKullaniciSorgula(
+    kullaniciAdiDegeri: string,
+    sifreDegeri: string
+  ): Promise<Kullanici | null> {
+    return new Promise((resolve) => {
+      const adres =
+        SUPABASE_URL +
+        "/rest/v1/kullanicilar?select=*&kullanici_adi=eq." +
+        encodeURIComponent(kullaniciAdiDegeri) +
+        "&sifre=eq." +
+        encodeURIComponent(sifreDegeri) +
+        "&aktif=eq.true";
 
-  async function girisYap(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+      const istek = new XMLHttpRequest();
+
+      istek.open("GET", adres, true);
+      istek.setRequestHeader("apikey", SUPABASE_KEY);
+      istek.setRequestHeader("Authorization", "Bearer " + SUPABASE_KEY);
+      istek.setRequestHeader("Content-Type", "application/json");
+
+      istek.onload = function () {
+        if (istek.status >= 200 && istek.status < 300) {
+          try {
+            const sonuc = JSON.parse(istek.responseText);
+
+            if (Array.isArray(sonuc) && sonuc.length > 0) {
+              resolve(sonuc[0]);
+              return;
+            }
+
+            resolve(null);
+          } catch {
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      };
+
+      istek.onerror = function () {
+        resolve(null);
+      };
+
+      istek.send();
+    });
+  }
+
+  function paneleYonlendir(kullanici: Kullanici) {
+    try {
+      kullaniciKaydet(kullanici);
+    } catch {}
+
+    if (kullanici.rol === "merkez") {
+      window.location.href = "/merkez-paneli?kullaniciId=" + kullanici.id;
+      return;
+    }
+
+    if (kullanici.rol === "hemsire") {
+      window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + kullanici.id;
+      return;
+    }
+
+    setHata("Kullanıcı rolü tanımsız.");
+  }
+
+  async function girisYap() {
+    if (yukleniyor) return;
 
     setHata("");
+
+    const temizKullaniciAdi = kullaniciAdi.trim();
+    const temizSifre = sifre.trim();
+
+    if (!temizKullaniciAdi || !temizSifre) {
+      setHata("Kullanıcı adı ve şifre zorunludur.");
+      return;
+    }
+
     setYukleniyor(true);
 
-    try {
-      // iOS 15 (iPhone 7) uyumluluğu: Supabase fetch timeout handle
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye timeout
+    const kullanici = await eskiUyumluKullaniciSorgula(
+      temizKullaniciAdi,
+      temizSifre
+    );
 
-      const { data, error } = await supabase
-        .from("kullanicilar")
-        .select("*")
-        .eq("kullanici_adi", kullaniciAdi.trim())
-        .eq("sifre", sifre.trim())
-        .eq("aktif", true)
-        .single();
+    setYukleniyor(false);
 
-      clearTimeout(timeoutId);
-
-      if (error || !data) {
-        setYukleniyor(false);
-        setHata("Kullanıcı adı veya şifre hatalı.");
-        return;
-      }
-
-      kullaniciKaydet(data);
-
-      setTimeout(() => {
-        function eskiIphoneMu() {
-          const ua = navigator.userAgent || "";
-
-          const iphone = ua.indexOf("iPhone") !== -1;
-          const iosEski =
-            ua.indexOf("OS 12_") !== -1 ||
-            ua.indexOf("OS 13_") !== -1 ||
-            ua.indexOf("OS 14_") !== -1 ||
-            ua.indexOf("OS 15_") !== -1;
-
-          return iphone && iosEski;
-        }
-
-        if (data.rol === "merkez") {
-          window.location.href = "/merkez-paneli";
-          return;
-        }
-
-        if (data.rol === "hemsire") {
-          if (eskiIphoneMu()) {
-            window.location.href = "/hemsire-paneli-hafif";
-            return;
-          }
-
-          window.location.href = "/hemsire-paneli";
-          return;
-        }
-
-        setHata("Kullanıcı rolü tanımsız.");
-      }, 300);
-    } catch (err) {
-      console.error("Giriş hatası:", err);
-      setYukleniyor(false);
-      setHata("Giriş sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+    if (!kullanici) {
+      setHata("Kullanıcı adı veya şifre hatalı.");
+      return;
     }
+
+    paneleYonlendir(kullanici);
   }
 
   return (
-    <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-3 sm:p-5">
-      <div className="w-full max-w-md kurumsal-kart rounded-2xl sm:rounded-3xl p-6 sm:p-8">
-        <div className="flex justify-center mb-3 sm:mb-5">
+    <main className="min-h-screen kurumsal-arka-plan flex items-center justify-center p-5">
+      <div className="w-full max-w-md kurumsal-kart rounded-3xl p-8">
+        <div className="flex justify-center mb-5">
           <img
             src="/logo-geropital.png"
             alt="Geropital"
-            className="h-14 sm:h-16 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-black text-[#144a7b] text-center">
+        <h1 className="text-3xl font-black text-[#144a7b] text-center">
           Geropital İş Talimatı
         </h1>
 
-        <p className="text-xs sm:text-sm text-slate-600 text-center mt-2">
+        <p className="text-slate-600 text-center mt-2">
           Merkez ve hemşire giriş ekranı
         </p>
 
-        <form onSubmit={girisYap} className="space-y-3 mt-6 sm:mt-8">
+        <div className="space-y-4 mt-8">
           <input
             value={kullaniciAdi}
             onChange={(e) => setKullaniciAdi(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             placeholder="Kullanıcı adı"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
           />
 
           <input
             type="password"
             value={sifre}
             onChange={(e) => setSifre(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-slate-900 text-sm"
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
             placeholder="Şifre"
+            autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                girisYap();
+              }
+            }}
           />
 
           {hata && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xs sm:text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
               {hata}
             </div>
           )}
 
           <button
-            type="submit"
+            type="button"
+            onClick={girisYap}
             disabled={yukleniyor}
-            className="w-full kurumsal-buton rounded-lg sm:rounded-xl py-2 sm:py-3 font-black text-sm"
+            className="w-full kurumsal-buton rounded-xl py-3 font-black"
           >
             {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
           </button>
-        </form>
+        </div>
 
         <div className="mt-6 bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-4 text-sm text-slate-700">
           <p>

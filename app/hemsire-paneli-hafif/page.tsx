@@ -65,20 +65,44 @@ export default function HemsirePaneliHafif() {
   const [hemsireNotu, setHemsireNotu] = useState("");
 
   useEffect(() => {
-    const aktifKullanici = kullaniciOku();
+    async function baslat() {
+      let aktifKullanici = kullaniciOku();
 
-    if (!aktifKullanici) {
-      window.location.href = "/giris";
-      return;
+      if (!aktifKullanici) {
+        const arama = window.location.search || "";
+        const eslesen = arama.match(/kullaniciId=([^&]+)/);
+        const kullaniciId = eslesen ? decodeURIComponent(eslesen[1]) : "";
+
+        if (!kullaniciId) {
+          window.location.href = "/giris";
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("kullanicilar")
+          .select("*")
+          .eq("id", kullaniciId)
+          .eq("aktif", true)
+          .single();
+
+        if (error || !data) {
+          window.location.href = "/giris";
+          return;
+        }
+
+        aktifKullanici = data;
+      }
+
+      if (aktifKullanici.rol !== "hemsire") {
+        window.location.href = "/merkez-paneli";
+        return;
+      }
+
+      setKullanici(aktifKullanici);
+      verileriGetir(aktifKullanici.id);
     }
 
-    if (aktifKullanici.rol !== "hemsire") {
-      window.location.href = "/merkez-paneli";
-      return;
-    }
-
-    setKullanici(aktifKullanici);
-    verileriGetir(aktifKullanici.id);
+    baslat();
   }, []);
 
   async function verileriGetir(hemsireId: string) {
