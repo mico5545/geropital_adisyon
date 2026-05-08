@@ -50,13 +50,16 @@ export default function GirisSayfasi() {
 
       istek.onload = function () {
         console.log("📩 API Yanıt Status:", istek.status);
+        console.log("📨 API Yanıt Metni:", istek.responseText);
         
         if (istek.status >= 200 && istek.status < 300) {
           try {
             const sonuc = JSON.parse(istek.responseText);
             console.log("✅ API Yanıtı Başarılı:", sonuc);
+            console.log("🔍 Sonuç Türü:", typeof sonuc, "Array mi?", Array.isArray(sonuc));
 
             if (Array.isArray(sonuc) && sonuc.length > 0) {
+              console.log("📋 İlk Kayıt:", sonuc[0]);
               console.log("👤 Kullanıcı Bulundu:", sonuc[0].ad_soyad, "Rol:", sonuc[0].rol);
               resolve(sonuc[0]);
               return;
@@ -66,6 +69,7 @@ export default function GirisSayfasi() {
             resolve(null);
           } catch (e) {
             console.log("❌ JSON Parse Hatası:", e);
+            console.log("❌ Hata Detayı:", e instanceof Error ? e.message : String(e));
             resolve(null);
           }
         } else {
