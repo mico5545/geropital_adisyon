@@ -60,12 +60,30 @@ export default function GirisSayfasi() {
       kullaniciKaydet(data);
 
       setTimeout(() => {
+        function eskiIphoneMu() {
+          const ua = navigator.userAgent || "";
+
+          const iphone = ua.indexOf("iPhone") !== -1;
+          const iosEski =
+            ua.indexOf("OS 12_") !== -1 ||
+            ua.indexOf("OS 13_") !== -1 ||
+            ua.indexOf("OS 14_") !== -1 ||
+            ua.indexOf("OS 15_") !== -1;
+
+          return iphone && iosEski;
+        }
+
         if (data.rol === "merkez") {
           window.location.href = "/merkez-paneli";
           return;
         }
 
         if (data.rol === "hemsire") {
+          if (eskiIphoneMu()) {
+            window.location.href = "/hemsire-paneli-hafif";
+            return;
+          }
+
           window.location.href = "/hemsire-paneli";
           return;
         }
