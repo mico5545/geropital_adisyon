@@ -107,28 +107,8 @@ export default function GirisSayfasi() {
     }
 
     if (kullanici.rol === "hemsire") {
-      function eskiIphoneMu() {
-        const ua = navigator.userAgent || "";
-        console.log("📱 User Agent:", ua);
-        
-        const iphone = ua.indexOf("iPhone") !== -1;
-        const iosEski =
-          ua.indexOf("OS 12_") !== -1 ||
-          ua.indexOf("OS 13_") !== -1 ||
-          ua.indexOf("OS 14_") !== -1 ||
-          ua.indexOf("OS 15_") !== -1;
-        
-        console.log("📱 iPhone mi?", iphone, "Eski iOS mi?", iosEski);
-        return iphone && iosEski;
-      }
-
-      if (eskiIphoneMu()) {
-        console.log("📱 Eski iPhone Tespit Edildi → Hafif Sürüme Yönlendiriliyor...");
-        window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + kullanici.id;
-      } else {
-        console.log("📱 Normal Cihaz → Normal Sürüme Yönlendiriliyor...");
-        window.location.href = "/hemsire-paneli?kullaniciId=" + kullanici.id;
-      }
+      console.log("➡️ Hemşire Paneline Yönlendiriliyor...");
+      window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + kullanici.id;
       return;
     }
 
