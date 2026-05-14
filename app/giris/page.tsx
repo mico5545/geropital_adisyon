@@ -206,14 +206,44 @@ export default function GirisSayfasi() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={girisYap}
-            disabled={yukleniyor}
-            className="w-full kurumsal-buton rounded-xl py-3 font-black"
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              girisYap();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              girisYap();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              girisYap();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                girisYap();
+              }
+            }}
+            style={{
+              width: "100%",
+              background: yukleniyor ? "#9bb8d3" : "#144a7b",
+              color: "white",
+              borderRadius: 12,
+              paddingTop: 14,
+              paddingBottom: 14,
+              textAlign: "center",
+              fontWeight: 900,
+              fontSize: 16,
+              WebkitTapHighlightColor: "transparent",
+              cursor: "pointer",
+              userSelect: "none",
+              touchAction: "manipulation",
+            }}
           >
             {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
-          </button>
+          </div>
         </div>
 
         <div className="mt-6 bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-4 text-sm text-slate-700">
