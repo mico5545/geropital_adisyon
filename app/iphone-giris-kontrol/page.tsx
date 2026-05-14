@@ -54,7 +54,7 @@ export default function IphoneGirisKontrol() {
 
                 if (data.rol === "hemsire") {
                   console.log("➡️ Hemşire Paneline Yönlendiriliyor...");
-                  window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + data.id;
+                  window.location.href = "/iphone-hemsire?kullaniciId=" + data.id;
                   return;
                 }
 
