@@ -1,4 +1,18 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
+
 export default function IphoneGiris() {
+  const searchParams = useSearchParams();
+  const hata = searchParams.get("hata");
+
+  let hataMetni = "";
+  if (hata === "1") {
+    hataMetni = "Kullanıcı adı veya şifre hatalı.";
+  } else if (hata === "rol") {
+    hataMetni = "Kullanıcı rolü tanımsız.";
+  }
+
   return (
     <main
       style={{
@@ -27,6 +41,23 @@ export default function IphoneGiris() {
           iPhone Uyumlu Giriş
         </h1>
 
+        {hataMetni && (
+          <div
+            style={{
+              background: "#fee2e2",
+              border: "1px solid #fca5a5",
+              color: "#dc2626",
+              borderRadius: 12,
+              padding: 12,
+              marginBottom: 16,
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            {hataMetni}
+          </div>
+        )}
+
         <form method="GET" action="/iphone-giris-kontrol">
           <input
             name="kullanici"
@@ -40,6 +71,7 @@ export default function IphoneGiris() {
               borderRadius: 12,
               border: "1px solid #cbd5e1",
               marginBottom: 12,
+              boxSizing: "border-box",
             }}
           />
 
@@ -54,6 +86,7 @@ export default function IphoneGiris() {
               borderRadius: 12,
               border: "1px solid #cbd5e1",
               marginBottom: 16,
+              boxSizing: "border-box",
             }}
           />
 
@@ -68,6 +101,7 @@ export default function IphoneGiris() {
               background: "#144a7b",
               color: "white",
               fontWeight: "bold",
+              cursor: "pointer",
             }}
           >
             Giriş Yap
