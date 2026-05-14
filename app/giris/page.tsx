@@ -244,6 +244,20 @@ export default function GirisSayfasi() {
           >
             {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
           </div>
+
+          <a
+            href="/iphone-giris"
+            style={{
+              display: "block",
+              textAlign: "center",
+              marginTop: 14,
+              color: "#144a7b",
+              fontWeight: "bold",
+              textDecoration: "underline",
+            }}
+          >
+            Eski iPhone ile giriş yap
+          </a>
         </div>
 
         <div className="mt-6 bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-4 text-sm text-slate-700">
