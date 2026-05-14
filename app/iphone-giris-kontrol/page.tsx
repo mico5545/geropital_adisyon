@@ -54,13 +54,13 @@ export default function IphoneGirisKontrol() {
 
                 if (data.rol === "hemsire") {
                   console.log("➡️ Hemşire Paneline Yönlendiriliyor...");
-                  window.location.href = "/hemsire-paneli-hafif";
+                  window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + data.id;
                   return;
                 }
 
                 if (data.rol === "merkez") {
                   console.log("➡️ Merkez Paneline Yönlendiriliyor...");
-                  window.location.href = "/merkez-paneli";
+                  window.location.href = "/merkez-paneli?kullaniciId=" + data.id;
                   return;
                 }
 

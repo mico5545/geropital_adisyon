@@ -66,60 +66,54 @@ export default function HemsirePaneliHafif() {
 
   useEffect(() => {
     async function baslat() {
-      console.log("🔑 Hemşire Paneli Başlatılıyor...");
-      
-      let aktifKullanici = kullaniciOku();
-      console.log("💾 localStorage'dan Okunan Kullanıcı:", aktifKullanici?.ad_soyad || "YOK");
+      async function kullaniciBilgisiniAl() {
+        const url = window.location.search || "";
+        const eslesen = url.match(/kullaniciId=([^&]+)/);
+        const urlKullaniciId = eslesen ? decodeURIComponent(eslesen[1]) : "";
 
-      if (!aktifKullanici) {
-        console.log("⚠️ localStorage'da Kullanıcı Yok, URL'den Aranıyor...");
-        
-        const arama = window.location.search || "";
-        console.log("🔗 URL Parametreleri:", arama);
-        
-        const eslesen = arama.match(/kullaniciId=([^&]+)/);
-        const kullaniciId = eslesen ? decodeURIComponent(eslesen[1]) : "";
+        if (urlKullaniciId) {
+          console.log("🔗 URL'den Kullanıcı ID Bulundu:", urlKullaniciId);
+          
+          const { data, error } = await supabase
+            .from("kullanicilar")
+            .select("id, ad_soyad, rol")
+            .eq("id", urlKullaniciId)
+            .eq("aktif", true)
+            .single();
 
-        console.log("🆔 Çıkarılan Kullanıcı ID:", kullaniciId);
+          if (error || !data || data.rol !== "hemsire") {
+            console.log("❌ URL Kullanıcı Doğrulaması Başarısız");
+            window.location.href = "/iphone-giris";
+            return;
+          }
 
-        if (!kullaniciId) {
-          console.log("❌ Kullanıcı ID Boş, Giriş Sayfasına Yönlendiriliyor...");
-          window.location.href = "/giris";
+          console.log("✅ URL Kullanıcısı Doğrulandı:", data.ad_soyad);
+          setKullanici(data);
+          verileriGetir(data.id);
           return;
         }
 
-        console.log("🔍 Veritabanından Kullanıcı Aranıyor...");
+        console.log("💾 localStorage'dan Kullanıcı Aranıyor...");
+        const aktifKullanici = kullaniciOku();
 
-        const { data, error } = await supabase
-          .from("kullanicilar")
-          .select("*")
-          .eq("id", kullaniciId)
-          .eq("aktif", true)
-          .single();
-
-        if (error) {
-          console.log("❌ Supabase Hatası:", error);
-        }
-
-        if (error || !data) {
-          console.log("❌ Kullanıcı Bulunamadı, Giriş Sayfasına Yönlendiriliyor...");
-          window.location.href = "/giris";
+        if (!aktifKullanici) {
+          console.log("❌ localStorage'da Kullanıcı Yok");
+          window.location.href = "/iphone-giris";
           return;
         }
 
-        console.log("✅ Veritabanından Kullanıcı Bulundu:", data.ad_soyad);
-        aktifKullanici = data;
+        if (aktifKullanici.rol !== "hemsire") {
+          console.log("❌ Rol Hemşire Değil:", aktifKullanici.rol);
+          window.location.href = "/iphone-giris";
+          return;
+        }
+
+        console.log("✅ localStorage Kullanıcısı Doğrulandı:", aktifKullanici.ad_soyad);
+        setKullanici(aktifKullanici);
+        verileriGetir(aktifKullanici.id);
       }
 
-      if (aktifKullanici.rol !== "hemsire") {
-        console.log("❌ Rol Hemşire Değil:", aktifKullanici.rol);
-        window.location.href = "/merkez-paneli";
-        return;
-      }
-
-      console.log("✅ Hemşire Onaylandı:", aktifKullanici.ad_soyad);
-      setKullanici(aktifKullanici);
-      verileriGetir(aktifKullanici.id);
+      await kullaniciBilgisiniAl();
     }
 
     baslat();
