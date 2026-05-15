@@ -25,6 +25,11 @@ export default function HizmetYonetimi() {
 
   const [duzenlenen, setDuzenlenen] = useState<Hizmet | null>(null);
 
+  // Arama ve filtreleme
+  const [aramaMetni, setAramaMetni] = useState("");
+  const [secilenKategori, setSecilenKategori] = useState<string | null>(null);
+  const [secilenDurum, setSecilenDurum] = useState<"hepsi" | "aktif" | "pasif">("hepsi");
+
   function cikisYap() {
     localStorage.removeItem("kullanici");
     window.location.href = "/giris";
@@ -125,6 +130,37 @@ export default function HizmetYonetimi() {
     await hizmetleriGetir();
   }
 
+  function filtreliHizmetleriGetir() {
+    return hizmetler.filter((hizmet) => {
+      // Arama metnine göre filtrele
+      const aramaUyuyor = hizmet.hizmet_adi
+        .toLowerCase()
+        .includes(aramaMetni.toLowerCase());
+
+      // Kategoriye göre filtrele
+      const kategoriUyuyor =
+        secilenKategori === null ||
+        secilenKategori === "" ||
+        hizmet.kategori === secilenKategori;
+
+      // Duruma göre filtrele
+      const durumUyuyor =
+        secilenDurum === "hepsi" ||
+        (secilenDurum === "aktif" && hizmet.aktif) ||
+        (secilenDurum === "pasif" && !hizmet.aktif);
+
+      return aramaUyuyor && kategoriUyuyor && durumUyuyor;
+    });
+  }
+
+  function kategorileriGetir() {
+    const kategoriler = new Set<string>();
+    hizmetler.forEach((h) => {
+      if (h.kategori) kategoriler.add(h.kategori);
+    });
+    return Array.from(kategoriler).sort();
+  }
+
   if (yukleniyor) {
     return <Yukleniyor />;
   }
@@ -195,44 +231,119 @@ export default function HizmetYonetimi() {
           </form>
         </section>
 
-        <section className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {hizmetler.map((hizmet) => (
-            <div key={hizmet.id} className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-5">
-              <div className="flex justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900">
-                    {hizmet.hizmet_adi}
-                  </h3>
-                  <p className="text-sm text-slate-500">{hizmet.kategori}</p>
-                  <p className="text-sm text-slate-500 mt-1">{hizmet.aciklama}</p>
-                </div>
+        <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-xl font-black text-slate-900 mb-4">🔍 Arama ve Filtreleme</h2>
 
-                <p className="font-black text-[#144a7b]">
-                  {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
-                </p>
-              </div>
+          <div className="grid sm:grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Hizmet Ara
+              </label>
+              <input
+                value={aramaMetni}
+                onChange={(e) => setAramaMetni(e.target.value)}
+                type="text"
+                placeholder="Hizmet adı ile ara..."
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              />
+            </div>
 
-              <div className="flex flex-wrap gap-2 mt-4">
-                <button
-                  onClick={() => setDuzenlenen(hizmet)}
-                  className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
-                >
-                  Düzenle
-                </button>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Kategori
+              </label>
+              <select
+                value={secilenKategori || ""}
+                onChange={(e) =>
+                  setSecilenKategori(e.target.value === "" ? null : e.target.value)
+                }
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              >
+                <option value="">Tüm Kategoriler</option>
+                {kategorileriGetir().map((kat) => (
+                  <option key={kat} value={kat}>
+                    {kat}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                <button
-                  onClick={() => aktifPasifYap(hizmet)}
-                  className={`px-4 py-2 rounded-xl font-bold ${
-                    hizmet.aktif
-                      ? "bg-red-50 text-red-700"
-                      : "bg-emerald-50 text-emerald-700"
-                  }`}
-                >
-                  {hizmet.aktif ? "Pasif Yap" : "Aktif Yap"}
-                </button>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Durum
+              </label>
+              <select
+                value={secilenDurum}
+                onChange={(e) =>
+                  setSecilenDurum(e.target.value as "hepsi" | "aktif" | "pasif")
+                }
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+              >
+                <option value="hepsi">Tüm Hizmetler</option>
+                <option value="aktif">Sadece Aktif</option>
+                <option value="pasif">Sadece Pasif</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                Sonuç
+              </label>
+              <div className="bg-slate-100 rounded-xl px-4 py-3 font-bold text-slate-900">
+                {filtreliHizmetleriGetir().length} / {hizmetler.length}
               </div>
             </div>
-          ))}
+          </div>
+        </section>
+
+        <section className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {filtreliHizmetleriGetir().length === 0 ? (
+            <div className="col-span-full kurumsal-kart rounded-2xl sm:rounded-3xl p-6 text-center">
+              <p className="text-slate-600 font-bold">
+                {hizmetler.length === 0
+                  ? "Hizmet bulunmuyor."
+                  : "Arama kriterlerine uygun hizmet bulunamadı."}
+              </p>
+            </div>
+          ) : (
+            filtreliHizmetleriGetir().map((hizmet) => (
+              <div key={hizmet.id} className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-5">
+                <div className="flex justify-between gap-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">
+                      {hizmet.hizmet_adi}
+                    </h3>
+                    <p className="text-sm text-slate-500">{hizmet.kategori}</p>
+                    <p className="text-sm text-slate-500 mt-1">{hizmet.aciklama}</p>
+                  </div>
+
+                  <p className="font-black text-[#144a7b]">
+                    {Number(hizmet.fiyat).toLocaleString("tr-TR")} TL
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button
+                    onClick={() => setDuzenlenen(hizmet)}
+                    className="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold"
+                  >
+                    Düzenle
+                  </button>
+
+                  <button
+                    onClick={() => aktifPasifYap(hizmet)}
+                    className={`px-4 py-2 rounded-xl font-bold ${
+                      hizmet.aktif
+                        ? "bg-red-50 text-red-700"
+                        : "bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {hizmet.aktif ? "Pasif Yap" : "Aktif Yap"}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </section>
       </div>
 
