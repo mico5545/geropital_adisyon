@@ -256,7 +256,7 @@ export default function GirisSayfasi() {
               textDecoration: "underline",
             }}
           >
-            Eski iPhone ile giriş yap
+            Hemşire Özel Girişi
           </a>
         </div>
 
