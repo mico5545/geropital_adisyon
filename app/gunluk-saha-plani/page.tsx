@@ -484,7 +484,8 @@ export default function GunlukSahaPlani() {
                             {saatKayitlari.map((k) => (
                               <div
                                 key={k.id}
-                                className="bg-slate-50 rounded-xl p-3 kurumsal-hover"
+                                onClick={() => window.location.href = `/merkez-paneli?kayit=${k.id}`}
+                                className="bg-slate-50 rounded-xl p-3 kurumsal-hover cursor-pointer transition hover:bg-blue-50 hover:border hover:border-[#144a7b]"
                               >
                                 <p className="font-black text-slate-900">
                                   {hastaAdiGetir(k)}
@@ -530,7 +531,11 @@ export default function GunlukSahaPlani() {
 
                   <tbody>
                     {filtreliKayitlar.map((k) => (
-                      <tr key={k.id} className="border-b border-slate-200">
+                      <tr 
+                        key={k.id} 
+                        onClick={() => window.location.href = `/merkez-paneli?kayit=${k.id}`}
+                        className="border-b border-slate-200 cursor-pointer hover:bg-blue-50 transition"
+                      >
                         <td className="p-3 font-bold">
                           {String(k.plan_saati || "").slice(0, 5)}
                         </td>
