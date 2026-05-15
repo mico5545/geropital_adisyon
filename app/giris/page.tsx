@@ -108,7 +108,7 @@ export default function GirisSayfasi() {
 
     if (kullanici.rol === "hemsire") {
       console.log("➡️ Hemşire Paneline Yönlendiriliyor...");
-      window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + kullanici.id;
+      window.location.href = "/hemsire-paneli?kullaniciId=" + kullanici.id;
       return;
     }
 
