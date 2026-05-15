@@ -16,35 +16,45 @@ export async function GET() {
   <title>Geropital Hemşire Paneli</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #f3f7fb;
+      background:
+        radial-gradient(circle at top left, rgba(20, 74, 123, 0.12), transparent 30%),
+        linear-gradient(135deg, #f9fcff 0%, #f3f7fb 45%, #e8f1f9 100%);
       color: #0f172a;
     }
 
     header {
-      background: white;
-      border-bottom: 1px solid #dbe7f3;
-      padding: 16px;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid rgba(20, 74, 123, 0.12);
+      padding: 18px 16px;
+      box-shadow: 0 8px 24px rgba(15, 41, 66, 0.06);
     }
 
     .logo {
-      height: 52px;
+      height: 54px;
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     h1 {
       color: #144a7b;
-      font-size: 22px;
+      font-size: 23px;
       margin: 0;
+      font-weight: 900;
+      letter-spacing: -0.3px;
     }
 
     .aciklama {
       color: #64748b;
       margin-top: 6px;
       font-size: 14px;
+      line-height: 1.4;
     }
 
     .sayfa {
@@ -53,25 +63,27 @@ export async function GET() {
     }
 
     .kart {
-      background: white;
-      border: 1px solid #dbe7f3;
-      border-radius: 18px;
-      padding: 16px;
+      background: rgba(255, 255, 255, 0.97);
+      border: 1px solid rgba(20, 74, 123, 0.12);
+      border-radius: 22px;
+      padding: 17px;
       margin-bottom: 14px;
-      box-shadow: 0 8px 24px rgba(15, 41, 66, 0.06);
+      box-shadow: 0 12px 30px rgba(15, 41, 66, 0.08);
     }
 
     .hasta-adi {
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 900;
       color: #0f172a;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      line-height: 1.2;
     }
 
     .satir {
       color: #475569;
-      font-size: 14px;
-      margin: 5px 0;
+      font-size: 15px;
+      margin: 6px 0;
+      line-height: 1.35;
     }
 
     .rozet {
@@ -79,21 +91,34 @@ export async function GET() {
       background: #e8f1fb;
       color: #144a7b;
       border-radius: 999px;
-      padding: 6px 10px;
+      padding: 7px 11px;
       font-size: 12px;
-      font-weight: 800;
+      font-weight: 900;
       margin-top: 8px;
+      margin-bottom: 6px;
+    }
+
+    .tutar {
+      background: #f4f8fc;
+      border: 1px solid rgba(20, 74, 123, 0.10);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+      color: #144a7b;
+      font-size: 18px;
+      font-weight: 900;
     }
 
     button {
       width: 100%;
       border: 0;
-      border-radius: 14px;
-      padding: 15px;
-      font-size: 16px;
+      border-radius: 15px;
+      padding: 16px;
+      font-size: 17px;
       font-weight: 900;
       margin-top: 10px;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .btn-ana {
@@ -117,27 +142,33 @@ export async function GET() {
       border: 1px solid #cbd5e1;
     }
 
-    input, select, textarea {
+    input,
+    select,
+    textarea {
       width: 100%;
       box-sizing: border-box;
-      padding: 14px;
-      border-radius: 12px;
+      padding: 15px;
+      border-radius: 14px;
       border: 1px solid #cbd5e1;
       font-size: 16px;
       margin-top: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 9px;
       background: white;
+      color: #0f172a;
     }
 
     textarea {
-      min-height: 90px;
+      min-height: 96px;
     }
 
     .bolum-baslik {
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 900;
-      margin-top: 18px;
+      margin-top: 20px;
+      margin-bottom: 8px;
       color: #144a7b;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 16px;
     }
 
     .gizli {
@@ -145,17 +176,29 @@ export async function GET() {
     }
 
     .yukleniyor {
-      padding: 30px;
+      padding: 34px;
       text-align: center;
       color: #144a7b;
       font-weight: 900;
+      font-size: 20px;
     }
 
     .hizmet-kutu {
       background: #f8fafc;
-      border-radius: 12px;
-      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 13px;
       margin-top: 8px;
+    }
+
+    .ust-bilgi {
+      background: #e8f1fb;
+      color: #144a7b;
+      padding: 10px 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 12px;
     }
   </style>
 </head>
@@ -164,7 +207,7 @@ export async function GET() {
   <header>
     <img src="/logo-geropital.png" class="logo" />
     <h1>Geropital Hemşire Paneli</h1>
-    <div class="aciklama">iPhone uyumlu saha ekranı</div>
+    <div class="aciklama">Hemşire saha işlemleri için sade ve hızlı mobil ekran</div>
   </header>
 
   <div id="yukleniyor" class="yukleniyor">Geropital yükleniyor...</div>
@@ -367,7 +410,7 @@ export async function GET() {
         html += '<div class="satir">' + (h.telefon || "Telefon yok") + '</div>';
         html += '<div class="satir">' + (h.adres || "Adres yok") + '</div>';
         html += '<div class="rozet">Plan: ' + plan + '</div>';
-        html += '<div class="satir"><b>Toplam:</b> ' + toplamHesapla(k).toLocaleString("tr-TR") + ' TL</div>';
+        html += '<div class="tutar">Toplam: ' + toplamHesapla(k).toLocaleString("tr-TR") + ' TL</div>';
         html += '<div class="satir"><b>Durum:</b> ' + k.durum + '</div>';
         html += '<div class="satir"><b>Ödeme:</b> ' + k.odeme_durumu + '</div>';
         html += '<button class="btn-ana" onclick="kayitAc(' + i + ')">Kaydı Aç</button>';

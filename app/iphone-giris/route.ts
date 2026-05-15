@@ -46,10 +46,10 @@ body {
   padding: 32px 24px;
   box-shadow: 0 4px 20px rgba(20, 74, 123, 0.08);
   border: 1px solid rgba(20, 74, 123, 0.1);
+  text-align: center;
 }
 
 h1 {
-  text-align: center;
   color: #144a7b;
   font-size: 28px;
   font-weight: 900;
@@ -57,48 +57,18 @@ h1 {
 }
 
 .subtitle {
-  text-align: center;
   color: #64748b;
   font-size: 14px;
   margin-bottom: 32px;
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
-
-label {
-  display: block;
-  color: #334155;
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-input {
-  width: 100%;
-  padding: 14px 16px;
-  font-size: 16px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  font-family: inherit;
-}
-
-input:focus {
-  outline: none;
-  border-color: #144a7b;
-  box-shadow: 0 0 0 3px rgba(20, 74, 123, 0.1);
-  background-color: #f8fafc;
-}
-
-input::placeholder {
-  color: #94a3b8;
+.button-container {
+  margin-top: 24px;
 }
 
 button {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px;
   font-size: 16px;
   font-weight: 900;
   border: none;
@@ -107,7 +77,6 @@ button {
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -120,6 +89,27 @@ button:hover {
 
 button:active {
   transform: translateY(0);
+}
+
+.loading {
+  display: none;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.spinner {
+  border: 4px solid rgba(20, 74, 123, 0.1);
+  border-top: 4px solid #144a7b;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .info-box {
@@ -148,13 +138,8 @@ button:active {
     font-size: 24px;
   }
 
-  input {
-    padding: 12px 14px;
-    font-size: 16px;
-  }
-
   button {
-    padding: 12px 14px;
+    padding: 14px;
   }
 }
 </style>
@@ -169,38 +154,51 @@ button:active {
     <h1>Hemşire Özel Giriş</h1>
     <p class="subtitle">Hemşire paneline erişim</p>
 
-    <form method="GET" action="/iphone-giris-kontrol">
-      <div class="form-group">
-        <label for="kullanici">Kullanıcı Adı</label>
-        <input 
-          id="kullanici"
-          name="kullanici" 
-          placeholder="Kullanıcı adınızı giriniz" 
-          autocomplete="off"
-          required
-        />
+    <div class="button-container">
+      <button onclick="girisYap()">Giriş Yap</button>
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 12px; color: #144a7b; font-weight: bold;">Giriş yapılıyor...</p>
       </div>
-
-      <div class="form-group">
-        <label for="sifre">Şifre</label>
-        <input 
-          id="sifre"
-          name="sifre" 
-          type="password" 
-          placeholder="Şifrenizi giriniz"
-          required
-        />
-      </div>
-
-      <button type="submit">Giriş Yap</button>
-    </form>
+    </div>
 
     <div class="info-box">
-      <strong>Demo Bilgileri:</strong>
-      Kullanıcı: hemsire | Şifre: 1234
+      <strong>Hemşire Paneline Hoş Geldiniz</strong>
+      Giriş yapmak için butona basınız
     </div>
   </div>
 </div>
+
+<script>
+function girisYap() {
+  const button = event.target;
+  const loading = document.getElementById('loading');
+  
+  button.disabled = true;
+  button.style.opacity = '0.6';
+  loading.style.display = 'block';
+  
+  // Form submit et
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = '/iphone-giris-kontrol';
+  
+  const kullaniciInput = document.createElement('input');
+  kullaniciInput.type = 'hidden';
+  kullaniciInput.name = 'kullanici';
+  kullaniciInput.value = 'hemsire';
+  
+  const sifreInput = document.createElement('input');
+  sifreInput.type = 'hidden';
+  sifreInput.name = 'sifre';
+  sifreInput.value = '1234';
+  
+  form.appendChild(kullaniciInput);
+  form.appendChild(sifreInput);
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
 </body>
 </html>
 `;

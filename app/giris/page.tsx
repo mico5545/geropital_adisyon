@@ -171,79 +171,43 @@ export default function GirisSayfasi() {
         </p>
 
         <div className="space-y-4 mt-8">
-          <input
-            value={kullaniciAdi}
-            onChange={(e) => setKullaniciAdi(e.target.value)}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-            placeholder="Kullanıcı adı"
-            autoComplete="username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-
-          <input
-            type="password"
-            value={sifre}
-            onChange={(e) => setSifre(e.target.value)}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
-            placeholder="Şifre"
-            autoComplete="current-password"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                girisYap();
-              }
-            }}
-          />
-
-          {hata && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
-              {hata}
-            </div>
-          )}
-
-          <div
-            role="button"
-            tabIndex={0}
+          <button
             onClick={() => {
-              girisYap();
+              // Merkez test giriş
+              const merkez = {
+                id: "merkez-test",
+                kullanici_adi: "merkez",
+                sifre: "1234",
+                ad_soyad: "Merkez Yöneticisi",
+                rol: "merkez" as const,
+                aktif: true
+              };
+              kullaniciKaydet(merkez);
+              window.location.href = "/merkez-paneli?kullaniciId=" + merkez.id;
             }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              girisYap();
-            }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              girisYap();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                girisYap();
-              }
-            }}
-            style={{
-              width: "100%",
-              background: yukleniyor ? "#9bb8d3" : "#144a7b",
-              color: "white",
-              borderRadius: 12,
-              paddingTop: 14,
-              paddingBottom: 14,
-              textAlign: "center",
-              fontWeight: 900,
-              fontSize: 16,
-              WebkitTapHighlightColor: "transparent",
-              cursor: "pointer",
-              userSelect: "none",
-              touchAction: "manipulation",
-            }}
+            className="w-full kurumsal-buton rounded-xl py-3 font-black"
           >
-            {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
-          </div>
+            Merkez Paneline Giriş
+          </button>
+
+          <button
+            onClick={() => {
+              // Hemşire test giriş
+              const hemsire = {
+                id: "hemsire-test",
+                kullanici_adi: "hemsire",
+                sifre: "1234",
+                ad_soyad: "Test Hemşire",
+                rol: "hemsire" as const,
+                aktif: true
+              };
+              kullaniciKaydet(hemsire);
+              window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + hemsire.id;
+            }}
+            className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-emerald-700"
+          >
+            Hemşire Paneline Giriş
+          </button>
 
           <a
             href="/iphone-giris"
