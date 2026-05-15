@@ -520,7 +520,7 @@ export default function HemsirePaneliHafif() {
     >
       <header
         style={{
-          background: "white",
+          background: "#ffffff",
           padding: 10,
           borderBottom: "1px solid #e2e8f0",
           display: "flex",
