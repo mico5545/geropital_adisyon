@@ -253,8 +253,6 @@ export default function HizmetYonetimi() {
         </div>
 
         <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
-
-        <section className="kurumsal-kart rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-4 sm:mb-6">
           <h2 className="text-xl font-black text-slate-900 mb-4">🔍 Arama ve Filtreleme</h2>
 
           <div className="grid sm:grid-cols-1 md:grid-cols-4 gap-3">
