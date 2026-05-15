@@ -541,9 +541,6 @@ export default function HemsirePaneliHafif() {
           <h1 style={{ color: "#144a7b", fontSize: 20, margin: 0, fontWeight: "bold" }}>
             Hemşire Paneli
           </h1>
-          <p style={{ color: "#64748b", marginTop: 2, fontSize: 12, margin: 0 }}>
-            iPhone uyumlu hafif saha ekranı
-          </p>
         </div>
 
         <button
