@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   if (aktifKullanici.rol === "hemsire") {
     return NextResponse.redirect(
-      new URL(`/iphone-hemsire?kullaniciId=${aktifKullanici.id}`, request.url)
+      new URL(`/hemsire-paneli-hafif?kullaniciId=${aktifKullanici.id}`, request.url)
     );
   }
 

@@ -171,43 +171,79 @@ export default function GirisSayfasi() {
         </p>
 
         <div className="space-y-4 mt-8">
-          <button
-            onClick={() => {
-              // Merkez test giriş
-              const merkez = {
-                id: "merkez-test",
-                kullanici_adi: "merkez",
-                sifre: "1234",
-                ad_soyad: "Merkez Yöneticisi",
-                rol: "merkez" as const,
-                aktif: true
-              };
-              kullaniciKaydet(merkez);
-              window.location.href = "/merkez-paneli?kullaniciId=" + merkez.id;
-            }}
-            className="w-full kurumsal-buton rounded-xl py-3 font-black"
-          >
-            Merkez Paneline Giriş
-          </button>
+          <input
+            value={kullaniciAdi}
+            onChange={(e) => setKullaniciAdi(e.target.value)}
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+            placeholder="Kullanıcı adı"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
 
-          <button
-            onClick={() => {
-              // Hemşire test giriş
-              const hemsire = {
-                id: "hemsire-test",
-                kullanici_adi: "hemsire",
-                sifre: "1234",
-                ad_soyad: "Test Hemşire",
-                rol: "hemsire" as const,
-                aktif: true
-              };
-              kullaniciKaydet(hemsire);
-              window.location.href = "/hemsire-paneli-hafif?kullaniciId=" + hemsire.id;
+          <input
+            type="password"
+            value={sifre}
+            onChange={(e) => setSifre(e.target.value)}
+            className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+            placeholder="Şifre"
+            autoComplete="current-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                girisYap();
+              }
             }}
-            className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-black transition hover:bg-emerald-700"
+          />
+
+          {hata && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
+              {hata}
+            </div>
+          )}
+
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              girisYap();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              girisYap();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              girisYap();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                girisYap();
+              }
+            }}
+            style={{
+              width: "100%",
+              background: yukleniyor ? "#9bb8d3" : "#144a7b",
+              color: "white",
+              borderRadius: 12,
+              paddingTop: 14,
+              paddingBottom: 14,
+              textAlign: "center",
+              fontWeight: 900,
+              fontSize: 16,
+              WebkitTapHighlightColor: "transparent",
+              cursor: "pointer",
+              userSelect: "none",
+              touchAction: "manipulation",
+            }}
           >
-            Hemşire Paneline Giriş
-          </button>
+            {yukleniyor ? "Giriş Yapılıyor..." : "Giriş Yap"}
+          </div>
 
           <a
             href="/iphone-giris"
@@ -222,15 +258,6 @@ export default function GirisSayfasi() {
           >
             Hemşire Özel Girişi
           </a>
-        </div>
-
-        <div className="mt-6 bg-[#f4f8fc] border border-[#144a7b]/10 rounded-xl p-4 text-sm text-slate-700">
-          <p>
-            <b>Merkez:</b> merkez / 1234
-          </p>
-          <p>
-            <b>Hemşire:</b> hemsire / 1234
-          </p>
         </div>
       </div>
     </main>
