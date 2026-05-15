@@ -513,7 +513,7 @@ export default function HemsirePaneliHafif() {
     <main
       style={{
         minHeight: "100vh",
-        background: "#f3f7fb",
+        background: "white",
         fontFamily: "Arial, sans-serif",
         paddingBottom: 30,
       }}
@@ -521,24 +521,24 @@ export default function HemsirePaneliHafif() {
       <header
         style={{
           background: "white",
-          padding: 16,
+          padding: 10,
           borderBottom: "1px solid #e2e8f0",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: 16,
+          gap: 12,
         }}
       >
         <div>
           <img
             src="/logo-geropital.png"
             alt="Geropital"
-            style={{ height: 40, display: "block" }}
+            style={{ height: 32, display: "block" }}
           />
         </div>
 
         <div style={{ flex: 1 }}>
-          <h1 style={{ color: "#144a7b", fontSize: 20, margin: 0, fontWeight: "bold" }}>
+          <h1 style={{ color: "#144a7b", fontSize: 16, margin: 0, fontWeight: "bold" }}>
             Hemşire Paneli
           </h1>
         </div>
@@ -546,13 +546,13 @@ export default function HemsirePaneliHafif() {
         <button
           onClick={cikisYap}
           style={{
-            padding: 10,
-            borderRadius: 10,
+            padding: "6px 12px",
+            borderRadius: 8,
             border: 0,
             background: "#f1f5f9",
             color: "#475569",
             fontWeight: "bold",
-            fontSize: 14,
+            fontSize: 12,
             cursor: "pointer",
             transition: "all 0.3s ease",
             whiteSpace: "nowrap",
@@ -564,8 +564,8 @@ export default function HemsirePaneliHafif() {
         </button>
       </header>
 
-      <section style={{ padding: 14 }}>
-        <h2 style={{ fontSize: 20, color: "#0f172a" }}>
+      <section style={{ padding: 10 }}>
+        <h2 style={{ fontSize: 16, color: "#0f172a", margin: "0 0 12px 0" }}>
           Bana Atanan Kayıtlar
         </h2>
 
@@ -591,9 +591,9 @@ export default function HemsirePaneliHafif() {
               key={kayit.id}
               style={{
                 background: "white",
-                borderRadius: 18,
-                padding: 16,
-                marginBottom: 12,
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 10,
                 border: "1px solid #dbe7f3",
                 transition: "all 0.3s ease",
                 cursor: "pointer",
@@ -607,34 +607,34 @@ export default function HemsirePaneliHafif() {
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
-              <h3 style={{ margin: 0, color: "#0f172a", fontSize: 20 }}>
+              <h3 style={{ margin: 0, color: "#0f172a", fontSize: 16 }}>
                 {hastaAdiGetir(kayit)}
               </h3>
 
-              <p style={{ margin: "6px 0", color: "#475569", fontSize: 14 }}>
+              <p style={{ margin: "4px 0", color: "#475569", fontSize: 12 }}>
                 {hastaTelefonGetir(kayit)}
               </p>
 
-              <p style={{ margin: "6px 0", color: "#475569", fontSize: 14 }}>
+              <p style={{ margin: "4px 0", color: "#475569", fontSize: 12 }}>
                 {hastaAdresGetir(kayit)}
               </p>
 
-              <p style={{ margin: "8px 0", color: "#144a7b", fontWeight: "bold" }}>
+              <p style={{ margin: "6px 0", color: "#144a7b", fontWeight: "bold", fontSize: 12 }}>
                 Plan: {planBilgisi(kayit)}
               </p>
 
-              <p style={{ margin: "8px 0", color: "#0f172a", fontWeight: "bold", fontSize: 18 }}>
+              <p style={{ margin: "6px 0", color: "#0f172a", fontWeight: "bold", fontSize: 16 }}>
                 Toplam: {toplamHesapla(kayit).toLocaleString("tr-TR")} TL
               </p>
 
-              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                 <div
                   style={{
                     background: durumuRenk.bg,
                     color: durumuRenk.text,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    fontSize: 13,
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 11,
                     fontWeight: "bold",
                   }}
                 >
@@ -644,9 +644,9 @@ export default function HemsirePaneliHafif() {
                   style={{
                     background: odemeRenk.bg,
                     color: odemeRenk.text,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    fontSize: 13,
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 11,
                     fontWeight: "bold",
                   }}
                 >
@@ -660,14 +660,14 @@ export default function HemsirePaneliHafif() {
                 }}
                 style={{
                   width: "100%",
-                  padding: 14,
-                  borderRadius: 12,
+                  padding: "10px 12px",
+                  borderRadius: 10,
                   border: 0,
                   background: "#144a7b",
                   color: "white",
                   fontWeight: "bold",
-                  fontSize: 16,
-                  marginTop: 10,
+                  fontSize: 14,
+                  marginTop: 8,
                   cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
@@ -710,16 +710,16 @@ export default function HemsirePaneliHafif() {
               width: "100%",
               maxWidth: "500px",
               background: "white",
-              borderRadius: 24,
-              padding: 20,
+              borderRadius: 20,
+              padding: 16,
               maxHeight: "85vh",
               overflowY: "auto",
               boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h2 style={{ color: "#144a7b", margin: 0, fontSize: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h2 style={{ color: "#144a7b", margin: 0, fontSize: 20 }}>
                 {hastaAdiGetir(seciliKayit)}
               </h2>
               <button
@@ -727,12 +727,12 @@ export default function HemsirePaneliHafif() {
                 style={{
                   background: "none",
                   border: "none",
-                  fontSize: 28,
+                  fontSize: 24,
                   cursor: "pointer",
                   color: "#64748b",
                   padding: 0,
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -742,10 +742,10 @@ export default function HemsirePaneliHafif() {
               </button>
             </div>
 
-            <p style={{ margin: "4px 0", color: "#475569", fontSize: 14 }}>
+            <p style={{ margin: "2px 0", color: "#475569", fontSize: 12 }}>
               {hastaTelefonGetir(seciliKayit)}
             </p>
-            <p style={{ margin: "4px 0 16px 0", color: "#475569", fontSize: 14 }}>
+            <p style={{ margin: "2px 0 12px 0", color: "#475569", fontSize: 12 }}>
               {hastaAdresGetir(seciliKayit)}
             </p>
 
@@ -779,9 +779,9 @@ export default function HemsirePaneliHafif() {
               })
             )}
 
-            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" }} />
+            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "12px 0" }} />
 
-            <h3 style={{ fontSize: 16, color: "#0f172a", marginTop: 20, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, color: "#0f172a", marginTop: 14, marginBottom: 10 }}>
               ➕ Ek Hizmet Ekle
             </h3>
 
@@ -792,11 +792,11 @@ export default function HemsirePaneliHafif() {
               }}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
               }}
             >
@@ -819,11 +819,11 @@ export default function HemsirePaneliHafif() {
               type="number"
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
               }}
             />
@@ -836,13 +836,13 @@ export default function HemsirePaneliHafif() {
               placeholder="Hizmet açıklaması (opsiyonel)"
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
-                minHeight: 60,
+                minHeight: 50,
               }}
             />
 
@@ -850,14 +850,14 @@ export default function HemsirePaneliHafif() {
               onClick={ekHizmetEkle}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
+                padding: "8px 10px",
+                borderRadius: 10,
                 border: 0,
                 background: "#144a7b",
                 color: "white",
                 fontWeight: "bold",
-                fontSize: 14,
-                marginBottom: 16,
+                fontSize: 12,
+                marginBottom: 12,
                 cursor: "pointer",
                 transition: "all 0.3s ease",
               }}
@@ -867,9 +867,9 @@ export default function HemsirePaneliHafif() {
               Ek Hizmeti Bildir
             </button>
 
-            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" }} />
+            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "12px 0" }} />
 
-            <h3 style={{ fontSize: 16, color: "#0f172a", marginTop: 20, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, color: "#0f172a", marginTop: 14, marginBottom: 10 }}>
               💳 Ödeme Durumu
             </h3>
 
@@ -880,11 +880,11 @@ export default function HemsirePaneliHafif() {
               }}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
               }}
             >
@@ -901,13 +901,13 @@ export default function HemsirePaneliHafif() {
               placeholder="Ödeme açıklaması (opsiyonel)"
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
-                minHeight: 60,
+                minHeight: 50,
               }}
             />
 
@@ -916,14 +916,14 @@ export default function HemsirePaneliHafif() {
               disabled={odemeTasdiriYapiliyor}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
+                padding: "8px 10px",
+                borderRadius: 10,
                 border: 0,
                 background: odemeTasdiriYapiliyor ? "#cbd5e1" : "#059669",
                 color: "white",
                 fontWeight: "bold",
-                fontSize: 14,
-                marginBottom: 16,
+                fontSize: 12,
+                marginBottom: 12,
                 cursor: odemeTasdiriYapiliyor ? "not-allowed" : "pointer",
                 transition: "all 0.3s ease",
               }}
@@ -933,9 +933,9 @@ export default function HemsirePaneliHafif() {
               {odemeTasdiriYapiliyor ? "Gönderiliyor..." : "Ödemeyi Bildir"}
             </button>
 
-            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "16px 0" }} />
+            <hr style={{ border: "none", borderTop: "1px solid #e2e8f0", margin: "12px 0" }} />
 
-            <h3 style={{ fontSize: 16, color: "#0f172a", marginTop: 20, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, color: "#0f172a", marginTop: 14, marginBottom: 10 }}>
               📝 Hemşire Notu
             </h3>
 
@@ -947,13 +947,13 @@ export default function HemsirePaneliHafif() {
               placeholder="Hasta işlem notu"
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
-                marginBottom: 10,
+                padding: "8px 10px",
+                borderRadius: 10,
+                marginBottom: 8,
                 border: "1px solid #cbd5e1",
-                fontSize: 14,
+                fontSize: 12,
                 fontFamily: "inherit",
-                minHeight: 80,
+                minHeight: 60,
               }}
             />
 
@@ -961,14 +961,14 @@ export default function HemsirePaneliHafif() {
               onClick={notKaydet}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
+                padding: "8px 10px",
+                borderRadius: 10,
                 border: 0,
                 background: "#2563eb",
                 color: "white",
                 fontWeight: "bold",
-                fontSize: 14,
-                marginBottom: 10,
+                fontSize: 12,
+                marginBottom: 8,
                 cursor: "pointer",
                 transition: "all 0.3s ease",
               }}
@@ -983,14 +983,14 @@ export default function HemsirePaneliHafif() {
               disabled={onayTasdiriYapiliyor}
               style={{
                 width: "100%",
-                padding: 12,
-                borderRadius: 12,
+                padding: "8px 10px",
+                borderRadius: 10,
                 border: 0,
                 background: onayTasdiriYapiliyor ? "#cbd5e1" : "#d97706",
                 color: "white",
                 fontWeight: "bold",
-                fontSize: 14,
-                marginBottom: 10,
+                fontSize: 12,
+                marginBottom: 8,
                 cursor: onayTasdiriYapiliyor ? "not-allowed" : "pointer",
                 transition: "all 0.3s ease",
               }}

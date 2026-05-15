@@ -372,59 +372,86 @@ export default function HizmetYonetimi() {
 
       {duzenlenen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl p-6">
-            <div className="flex justify-between gap-4 mb-5">
+          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between gap-4 mb-6">
               <h2 className="text-2xl font-black text-[#144a7b]">Hizmet Düzenle</h2>
               <button
                 onClick={() => setDuzenlenen(null)}
-                className="bg-slate-100 px-4 py-2 rounded-xl font-black"
+                className="bg-slate-100 px-4 py-2 rounded-xl font-black hover:bg-slate-200 transition"
               >
-                Kapat
+                ✕
               </button>
             </div>
 
-            <div className="space-y-3">
-              <input
-                value={duzenlenen.hizmet_adi}
-                onChange={(e) =>
-                  setDuzenlenen({ ...duzenlenen, hizmet_adi: e.target.value })
-                }
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
-                placeholder="Hizmet adı"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Hizmet Adı *
+                </label>
+                <input
+                  value={duzenlenen.hizmet_adi}
+                  onChange={(e) =>
+                    setDuzenlenen({ ...duzenlenen, hizmet_adi: e.target.value })
+                  }
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                  placeholder="Hizmet adını giriniz..."
+                />
+              </div>
 
-              <input
-                value={duzenlenen.fiyat}
-                onChange={(e) =>
-                  setDuzenlenen({ ...duzenlenen, fiyat: Number(e.target.value) })
-                }
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
-                placeholder="Fiyat"
-              />
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Fiyat (TL) *
+                </label>
+                <input
+                  value={duzenlenen.fiyat}
+                  onChange={(e) =>
+                    setDuzenlenen({ ...duzenlenen, fiyat: Number(e.target.value) })
+                  }
+                  type="number"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                  placeholder="Fiyat giriniz..."
+                />
+              </div>
 
-              <input
-                value={duzenlenen.kategori || ""}
-                onChange={(e) =>
-                  setDuzenlenen({ ...duzenlenen, kategori: e.target.value })
-                }
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
-                placeholder="Kategori"
-              />
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Kategori * (Seç)
+                </label>
+                <select
+                  value={duzenlenen.kategori || ""}
+                  onChange={(e) =>
+                    setDuzenlenen({ ...duzenlenen, kategori: e.target.value })
+                  }
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900"
+                >
+                  <option value="">Kategori seçiniz</option>
+                  {kategorilerList.map((kat) => (
+                    <option key={kat} value={kat}>
+                      {kat}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <textarea
-                value={duzenlenen.aciklama || ""}
-                onChange={(e) =>
-                  setDuzenlenen({ ...duzenlenen, aciklama: e.target.value })
-                }
-                className="w-full border border-slate-300 rounded-xl px-4 py-3 min-h-28"
-                placeholder="Açıklama"
-              />
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Açıklama (İsteğe Bağlı)
+                </label>
+                <textarea
+                  value={duzenlenen.aciklama || ""}
+                  onChange={(e) =>
+                    setDuzenlenen({ ...duzenlenen, aciklama: e.target.value })
+                  }
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 min-h-24"
+                  placeholder="Hizmet açıklaması..."
+                />
+              </div>
 
               <button
                 onClick={hizmetGuncelle}
-                className="w-full bg-[#144a7b] text-white rounded-xl py-3 font-black"
+                className="w-full bg-[#144a7b] text-white rounded-xl py-3 font-black hover:bg-[#0f3a5f] transition"
               >
-                Kaydet
+                Değişiklikleri Kaydet
               </button>
             </div>
           </div>
@@ -446,6 +473,7 @@ export default function HizmetYonetimi() {
 
             <div className="bg-emerald-50 border-l-4 border-emerald-600 p-4 rounded-lg mb-6">
               <h3 className="font-black text-emerald-900 mb-3">📌 Yeni Kategori Ekle</h3>
+              <p className="text-xs text-emerald-800 mb-3">Seçili kategoride yoksa buradan ekle</p>
               <div className="flex gap-2">
                 <input
                   value={yeniKategoriAdi}
@@ -456,7 +484,7 @@ export default function HizmetYonetimi() {
                 />
                 <button
                   onClick={kategoriEkle}
-                  className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black hover:bg-emerald-700 transition"
+                  className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-black hover:bg-emerald-700 transition whitespace-nowrap"
                 >
                   + Ekle
                 </button>
@@ -464,6 +492,7 @@ export default function HizmetYonetimi() {
             </div>
 
             <hr className="my-6" />
+            <h3 className="text-lg font-black text-slate-900 mb-4">Hizmet Bilgileri</h3>
 
             <form onSubmit={hizmetEkle} className="space-y-4">
               <div>
