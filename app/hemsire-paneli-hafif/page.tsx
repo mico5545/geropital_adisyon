@@ -428,8 +428,83 @@ export default function HemsirePaneliHafif() {
 
   if (yukleniyor) {
     return (
-      <main style={{ padding: 30, fontFamily: "Arial" }}>
-        <h2>Geropital yükleniyor...</h2>
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #f3f7fb 0%, #e8f1fb 100%)",
+          fontFamily: "Arial, sans-serif",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <img
+            src="/logo-geropital.png"
+            alt="Geropital"
+            style={{
+              height: 80,
+              marginBottom: 30,
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+          <h2 style={{ color: "#144a7b", fontSize: 24, margin: 0, fontWeight: "bold" }}>
+            Geropital Yükleniyor
+          </h2>
+          <p style={{ color: "#64748b", marginTop: 12, fontSize: 14 }}>
+            Lütfen bekleyin...
+          </p>
+          <div
+            style={{
+              marginTop: 30,
+              display: "flex",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#144a7b",
+                animation: "bounce 1.4s infinite",
+                animationDelay: "0s",
+              }}
+            />
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#144a7b",
+                animation: "bounce 1.4s infinite",
+                animationDelay: "0.2s",
+              }}
+            />
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "#144a7b",
+                animation: "bounce 1.4s infinite",
+                animationDelay: "0.4s",
+              }}
+            />
+          </div>
+        </div>
+        <style>{`
+          @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+          }
+        `}</style>
       </main>
     );
   }
@@ -445,42 +520,48 @@ export default function HemsirePaneliHafif() {
     >
       <header
         style={{
-          background: "linear-gradient(135deg, #144a7b 0%, #0f3a5f 100%)",
+          background: "white",
           padding: 16,
-          borderBottom: "1px solid #d7e4f2",
+          borderBottom: "1px solid #e2e8f0",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 16,
         }}
       >
-        <img
-          src="/logo-geropital.png"
-          alt="Geropital"
-          style={{ height: 48, display: "block", marginBottom: 10 }}
-        />
+        <div>
+          <img
+            src="/logo-geropital.png"
+            alt="Geropital"
+            style={{ height: 40, display: "block" }}
+          />
+        </div>
 
-        <h1 style={{ color: "white", fontSize: 22, margin: 0 }}>
-          Hemşire Paneli
-        </h1>
-
-        <p style={{ color: "rgba(255,255,255,0.85)", marginTop: 6 }}>
-          iPhone uyumlu hafif saha ekranı
-        </p>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ color: "#144a7b", fontSize: 20, margin: 0, fontWeight: "bold" }}>
+            Hemşire Paneli
+          </h1>
+          <p style={{ color: "#64748b", marginTop: 2, fontSize: 12, margin: 0 }}>
+            iPhone uyumlu hafif saha ekranı
+          </p>
+        </div>
 
         <button
           onClick={cikisYap}
           style={{
-            width: "100%",
-            marginTop: 12,
-            padding: 14,
-            borderRadius: 12,
+            padding: 10,
+            borderRadius: 10,
             border: 0,
-            background: "rgba(0,0,0,0.2)",
-            color: "white",
+            background: "#f1f5f9",
+            color: "#475569",
             fontWeight: "bold",
-            fontSize: 16,
+            fontSize: 14,
             cursor: "pointer",
             transition: "all 0.3s ease",
+            whiteSpace: "nowrap",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.3)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.2)")}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#e2e8f0")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#f1f5f9")}
         >
           Çıkış
         </button>
@@ -620,22 +701,23 @@ export default function HemsirePaneliHafif() {
             background: "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(4px)",
             display: "flex",
-            alignItems: "flex-end",
+            alignItems: "center",
+            justifyContent: "center",
             zIndex: 1000,
-            animation: "slideUp 0.3s ease-out",
+            padding: 12,
           }}
           onClick={() => setModalAcik(false)}
         >
           <div
             style={{
               width: "100%",
+              maxWidth: "500px",
               background: "white",
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
+              borderRadius: 24,
               padding: 20,
-              maxHeight: "90vh",
+              maxHeight: "85vh",
               overflowY: "auto",
-              boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.1)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
